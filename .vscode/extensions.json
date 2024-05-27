@@ -1,0 +1,12 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "ms-python.black-formatter",
+    "alexcvzz.vscode-sqlite",
+    "adpyke.vscode-sql-formatter",
+    "xaver.clang-format",
+    "editorconfig.editorconfig",
+    "visualstudioexptteam.vscodeintellicode",
+  ]
+}
