@@ -32,9 +32,11 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // You can now access the parsed JSON object and use it as needed
+    for (const auto &config : data) {
+        std::cout << "Model Repository:\t" << config["model_repo"] << "\n";
 
-    std::cout << data << '\n';
+        std::cout << "Model Architecture:\t" << config["model_arch"] << '\n';
+    }
 
     return 0;
 }
