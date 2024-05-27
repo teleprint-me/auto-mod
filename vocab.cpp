@@ -1,6 +1,7 @@
 #include <cstring>
 #include <fstream>
 #include <getopt.h>
+#include <iostream>
 #include <nlohmann/json.hpp>
 
 int main(int argc, char* argv[]) {
@@ -23,7 +24,17 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    puts("Hello, world!");
     std::ifstream  f(registryFilePath);
     nlohmann::json data = nlohmann::json::parse(f);
+
+    if (data.is_null()) {
+        puts("Error: Unable to parse registry file.");
+        return 1;
+    }
+
+    // You can now access the parsed JSON object and use it as needed
+
+    std::cout << data << '\n';
+
+    return 0;
 }
