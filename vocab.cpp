@@ -10,12 +10,12 @@ int main(int argc, char* argv[]) {
         = {{"registry-file", required_argument, nullptr, 'f'}, {nullptr}};
 
     int  opt;
-    char registryFilePath[1024];
+    char registry_file_path[1024];
 
     while ((opt = getopt_long(argc, argv, short_options, long_options, nullptr)) != -1) {
         switch (opt) {
             case 'f':
-                strcpy(registryFilePath, optarg);
+                strcpy(registry_file_path, optarg);
                 break;
 
             default:
@@ -24,7 +24,7 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    std::ifstream  f(registryFilePath);
+    std::ifstream  f(registry_file_path);
     nlohmann::json data = nlohmann::json::parse(f);
 
     if (data.is_null()) {
@@ -33,10 +33,10 @@ int main(int argc, char* argv[]) {
     }
 
     for (const auto &config : data) {
-        const std::string modelArch = config["model_arch"];
+        const std::string model_arch = config["model_arch"];
 
-        if (modelArch == "stablelm") {
-            std::cout << "Model Architecture:\t" << modelArch << '\n';
+        if (model_arch == "stablelm") {
+            std::cout << "Model Architecture:\t" << model_arch << '\n';
 
             // normalizer and pre_tokenizer are either null or an object
             const nlohmann::json normalizer    = config["normalizer"];
