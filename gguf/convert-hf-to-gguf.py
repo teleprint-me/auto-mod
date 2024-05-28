@@ -30,7 +30,7 @@ from torch import Tensor
 import gguf
 from gguf.vocab import LlamaHfVocab
 
-logger = logging.getLogger("hf-to-gguf")
+logger = logging.getLogger(__file__)
 
 #####################
 # MODEL DEFINITIONS #
