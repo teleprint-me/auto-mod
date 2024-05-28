@@ -4,16 +4,6 @@ from __future__ import annotations
 import argparse
 import json
 import logging
-import os
-import sys
-from pathlib import Path
-
-# Necessary to load the local gguf package
-if (
-    "NO_LOCAL_GGUF" not in os.environ
-    and (Path(__file__).parent.parent.parent / "gguf-py").exists()
-):
-    sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from gguf.constants import (
     HF_TOKENIZER_BPE_FILES,
@@ -26,7 +16,7 @@ from gguf.constants import (
 )
 from gguf.huggingface_hub import HFHubModel, HFHubTokenizer
 
-logger = logging.getLogger("gguf-gen-pre")
+logger = logging.getLogger(__file__)
 
 #
 # HuggingFace Model Map
