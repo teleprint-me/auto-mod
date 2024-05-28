@@ -72,8 +72,9 @@ class Keys:
     class Tokenizer:
         MODEL = "tokenizer.ggml.model"  # Model arch, e.g. llama
         TYPE = "tokenizer.ggml.type"  # BPE, SPM, WPM, etc.
-        NORM = "tokenizer.ggml.norm"  # Array of normalizers
-        PRE = "tokenizer.ggml.pre"  # Array of pre-tokenizers
+        NORM = "tokenizer.ggml.norm"  # Normalizer object
+        PRE = "tokenizer.ggml.pre"  # Pre-tokenizer object
+        ADDED = "tokenizer.ggml.added"  # Added tokens list
         LIST = "tokenizer.ggml.tokens"
         TOKEN_TYPE = "tokenizer.ggml.token_type"
         TOKEN_TYPE_COUNT = "tokenizer.ggml.token_type_count"  # BERT token types
@@ -1088,8 +1089,8 @@ KEY_SSM_TIME_STEP_RANK = Keys.SSM.TIME_STEP_RANK
 # tokenization
 KEY_TOKENIZER_MODEL = Keys.Tokenizer.MODEL
 KEY_TOKENIZER_TYPE = Keys.Tokenizer.TYPE
+KEY_TOKENIZER_NORM = Keys.Tokenizer.NORM
 KEY_TOKENIZER_PRE = Keys.Tokenizer.PRE
-KEY_TOKENIZER_HASH = Keys.Tokenizer.HASH
 KEY_TOKENIZER_LIST = Keys.Tokenizer.LIST
 KEY_TOKENIZER_TOKEN_TYPE = Keys.Tokenizer.TOKEN_TYPE
 KEY_TOKENIZER_SCORES = Keys.Tokenizer.SCORES
