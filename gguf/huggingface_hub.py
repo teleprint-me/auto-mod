@@ -120,14 +120,14 @@ class HFHubTokenizer(HFHubBase):
 
     @staticmethod
     def list_vocab_files(vocab_type: VocabType) -> tuple[str]:
-        if vocab_type == VocabType.SPM:
+        if vocab_type == VocabType.SPM.value:
             return HF_TOKENIZER_SPM_FILES
         # NOTE: WPM and BPE are equivalent
         return HF_TOKENIZER_BPE_FILES
 
     @property
     def default_pre_tokenizer(self) -> tuple[str, ...]:
-        return (GPT_PRE_TOKENIZER_DEFAULT,)
+        return GPT_PRE_TOKENIZER_DEFAULT
 
     def config(self, model_repo: str) -> dict[str, object]:
         path = self.model_path / model_repo / "config.json"
