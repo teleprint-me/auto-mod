@@ -3,6 +3,7 @@
 !CMakeLists.txt
 
 # ignore local paths
+/models
 /build
 /local
 /logs
