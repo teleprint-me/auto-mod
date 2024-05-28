@@ -10,7 +10,7 @@ from gguf.constants import (
     HF_TOKENIZER_SPM_FILES,
     MODEL_ARCH,
     MODEL_ARCH_NAMES,
-    ModelFileType,
+    ModelFileExtension,
     PreTokenizerType,
     VocabType,
 )
@@ -43,8 +43,8 @@ HF_MODEL_MAP = (
         "model_repo": "meta-llama/Llama-2-7b-hf",
         "model_arch": MODEL_ARCH.LLAMA,
         "model_parts": 2,
-        "model_type": ModelFileType.SAFETENSORS,
-        "vocab_type": VocabType.SPM,
+        "model_type": ModelFileExtension.SAFETENSORS.value,
+        "vocab_type": VocabType.SPM.value,
         "vocab_pre": None,
         "vocab_files": HF_TOKENIZER_SPM_FILES,
     },
@@ -52,8 +52,8 @@ HF_MODEL_MAP = (
         "model_repo": "mistralai/Mistral-7B-Instruct-v0.1",
         "model_arch": MODEL_ARCH.LLAMA,
         "model_parts": 2,
-        "model_type": ModelFileType.SAFETENSORS,
-        "vocab_type": VocabType.SPM,
+        "model_type": ModelFileExtension.SAFETENSORS.value,
+        "vocab_type": VocabType.SPM.value,
         "vocab_pre": None,
         "vocab_files": HF_TOKENIZER_SPM_FILES,
     },
@@ -61,8 +61,8 @@ HF_MODEL_MAP = (
         "model_repo": "mistralai/Mistral-7B-Instruct-v0.2",
         "model_arch": MODEL_ARCH.LLAMA,
         "model_parts": 3,
-        "model_type": ModelFileType.SAFETENSORS,
-        "vocab_type": VocabType.SPM,
+        "model_type": ModelFileExtension.SAFETENSORS.value,
+        "vocab_type": VocabType.SPM.value,
         "vocab_pre": None,
         "vocab_files": HF_TOKENIZER_SPM_FILES,
     },
@@ -70,8 +70,8 @@ HF_MODEL_MAP = (
         "model_repo": "mistralai/Mistral-7B-Instruct-v0.3",
         "model_arch": MODEL_ARCH.LLAMA,
         "model_parts": 3,
-        "model_type": ModelFileType.SAFETENSORS,
-        "vocab_type": VocabType.SPM,
+        "model_type": ModelFileExtension.SAFETENSORS.value,
+        "vocab_type": VocabType.SPM.value,
         "vocab_pre": None,
         "vocab_files": HF_TOKENIZER_SPM_FILES,
     },
@@ -79,8 +79,8 @@ HF_MODEL_MAP = (
         "model_repo": "mistralai/Mixtral-8x7B-Instruct-v0.1",
         "model_arch": MODEL_ARCH.LLAMA,
         "model_parts": 8,
-        "model_type": ModelFileType.SAFETENSORS,
-        "vocab_type": VocabType.SPM,
+        "model_type": ModelFileExtension.SAFETENSORS.value,
+        "vocab_type": VocabType.SPM.value,
         "vocab_pre": None,
         "vocab_files": HF_TOKENIZER_SPM_FILES,
     },
@@ -88,8 +88,8 @@ HF_MODEL_MAP = (
         "model_repo": "microsoft/Phi-3-mini-4k-instruct",
         "model_arch": MODEL_ARCH.PHI3,
         "model_parts": 2,
-        "model_type": ModelFileType.SAFETENSORS,
-        "vocab_type": VocabType.SPM,
+        "model_type": ModelFileExtension.SAFETENSORS.value,
+        "vocab_type": VocabType.SPM.value,
         "vocab_pre": None,
         "vocab_files": HF_TOKENIZER_SPM_FILES,
     },
@@ -99,8 +99,8 @@ HF_MODEL_MAP = (
         "model_repo": "BAAI/bge-small-en-v1.5",
         "model_arch": MODEL_ARCH.BERT,
         "model_parts": 1,
-        "model_type": ModelFileType.BIN,
-        "vocab_type": VocabType.WPM,
+        "model_type": ModelFileExtension.BIN.value,
+        "vocab_type": VocabType.WPM.value,
         "vocab_pre": None,
         "vocab_files": HF_TOKENIZER_BPE_FILES,
     },
@@ -108,8 +108,8 @@ HF_MODEL_MAP = (
         "model_repo": "jinaai/jina-embeddings-v2-base-en",
         "model_arch": MODEL_ARCH.JINA_BERT_V2,
         "model_parts": 1,
-        "model_type": ModelFileType.SAFETENSORS,
-        "vocab_type": VocabType.WPM,
+        "model_type": ModelFileExtension.SAFETENSORS.value,
+        "vocab_type": VocabType.WPM.value,
         "vocab_pre": None,
         "vocab_files": HF_TOKENIZER_BPE_FILES,
     },
@@ -118,8 +118,8 @@ HF_MODEL_MAP = (
         "model_repo": "meta-llama/Meta-Llama-3-8B",
         "model_arch": MODEL_ARCH.LLAMA,
         "model_parts": 4,
-        "model_type": ModelFileType.SAFETENSORS,
-        "vocab_type": VocabType.BPE,
+        "model_type": ModelFileExtension.SAFETENSORS.value,
+        "vocab_type": VocabType.BPE.value,
         "vocab_pre": None,
         "vocab_files": HF_TOKENIZER_BPE_FILES,
     },
@@ -127,8 +127,8 @@ HF_MODEL_MAP = (
         "model_repo": "tiiuae/falcon-7b",
         "model_arch": MODEL_ARCH.FALCON,
         "model_parts": 2,
-        "model_type": ModelFileType.BIN,
-        "vocab_type": VocabType.BPE,
+        "model_type": ModelFileExtension.BIN.value,
+        "vocab_type": VocabType.BPE.value,
         "vocab_pre": None,
         "vocab_files": HF_TOKENIZER_BPE_FILES,
     },
@@ -136,8 +136,8 @@ HF_MODEL_MAP = (
         "model_repo": "deepseek-ai/deepseek-llm-7b-base",
         "model_arch": MODEL_ARCH.LLAMA,
         "model_parts": 2,
-        "model_type": ModelFileType.BIN,
-        "vocab_type": VocabType.BPE,
+        "model_type": ModelFileExtension.BIN.value,
+        "vocab_type": VocabType.BPE.value,
         "vocab_pre": None,
         "vocab_files": HF_TOKENIZER_BPE_FILES,
     },
@@ -145,8 +145,8 @@ HF_MODEL_MAP = (
         "model_repo": "deepseek-ai/deepseek-coder-6.7b-base",
         "model_arch": MODEL_ARCH.LLAMA,
         "model_parts": 2,
-        "model_type": ModelFileType.SAFETENSORS,
-        "vocab_type": VocabType.BPE,
+        "model_type": ModelFileExtension.SAFETENSORS.value,
+        "vocab_type": VocabType.BPE.value,
         "vocab_pre": None,
         "vocab_files": HF_TOKENIZER_BPE_FILES,
     },
@@ -154,8 +154,8 @@ HF_MODEL_MAP = (
         "model_repo": "mosaicml/mpt-7b",
         "model_arch": MODEL_ARCH.MPT,
         "model_parts": 2,
-        "model_type": ModelFileType.BIN,
-        "vocab_type": VocabType.BPE,
+        "model_type": ModelFileExtension.BIN.value,
+        "vocab_type": VocabType.BPE.value,
         "vocab_pre": None,
         "vocab_files": HF_TOKENIZER_BPE_FILES,
     },
@@ -166,8 +166,8 @@ HF_MODEL_MAP = (
         "model_repo": "bigcode/starcoder2-3b",
         "model_arch": MODEL_ARCH.STARCODER2,
         "model_parts": 1,
-        "model_type": ModelFileType.SAFETENSORS,
-        "vocab_type": VocabType.BPE,
+        "model_type": ModelFileExtension.SAFETENSORS.value,
+        "vocab_type": VocabType.BPE.value,
         "vocab_pre": None,
         "vocab_files": HF_TOKENIZER_BPE_FILES,
     },
@@ -175,8 +175,8 @@ HF_MODEL_MAP = (
         "model_repo": "smallcloudai/Refact-1_6-base",
         "model_arch": MODEL_ARCH.REFACT,
         "model_parts": 1,
-        "model_type": ModelFileType.BIN,
-        "vocab_type": VocabType.BPE,
+        "model_type": ModelFileExtension.BIN.value,
+        "vocab_type": VocabType.BPE.value,
         "vocab_pre": None,
         "vocab_files": HF_TOKENIZER_BPE_FILES,
     },
@@ -184,8 +184,8 @@ HF_MODEL_MAP = (
         "model_repo": "CohereForAI/c4ai-command-r-v01",
         "model_arch": MODEL_ARCH.COMMAND_R,
         "model_parts": 15,
-        "model_type": ModelFileType.SAFETENSORS,
-        "vocab_type": VocabType.BPE,
+        "model_type": ModelFileExtension.SAFETENSORS.value,
+        "vocab_type": VocabType.BPE.value,
         "vocab_pre": None,
         "vocab_files": HF_TOKENIZER_BPE_FILES,
     },
@@ -196,8 +196,8 @@ HF_MODEL_MAP = (
         "model_repo": "Qwen/Qwen1.5-7B",
         "model_arch": MODEL_ARCH.QWEN2,
         "model_parts": 4,
-        "model_type": ModelFileType.SAFETENSORS,
-        "vocab_type": VocabType.BPE,
+        "model_type": ModelFileExtension.SAFETENSORS.value,
+        "vocab_type": VocabType.BPE.value,
         "vocab_pre": None,
         "vocab_files": HF_TOKENIZER_BPE_FILES,
     },
@@ -205,8 +205,8 @@ HF_MODEL_MAP = (
         "model_repo": "stabilityai/stablelm-2-zephyr-1_6b",
         "model_arch": MODEL_ARCH.STABLELM,
         "model_parts": 1,
-        "model_type": ModelFileType.SAFETENSORS,
-        "vocab_type": VocabType.BPE,
+        "model_type": ModelFileExtension.SAFETENSORS.value,
+        "vocab_type": VocabType.BPE.value,
         "vocab_pre": None,
         "vocab_files": HF_TOKENIZER_BPE_FILES,
     },
@@ -217,8 +217,8 @@ HF_MODEL_MAP = (
         "model_repo": "openai-community/gpt2",
         "model_arch": MODEL_ARCH.GPT2,
         "model_parts": 1,
-        "model_type": ModelFileType.SAFETENSORS,
-        "vocab_type": VocabType.BPE,
+        "model_type": ModelFileExtension.SAFETENSORS.value,
+        "vocab_type": VocabType.BPE.value,
         "vocab_pre": None,
         "vocab_files": HF_TOKENIZER_BPE_FILES,
     },
@@ -226,8 +226,8 @@ HF_MODEL_MAP = (
         "model_repo": "allenai/OLMo-1.7-7B-hf",
         "model_arch": MODEL_ARCH.OLMO,
         "model_parts": 6,
-        "model_type": ModelFileType.SAFETENSORS,
-        "vocab_type": VocabType.BPE,
+        "model_type": ModelFileExtension.SAFETENSORS.value,
+        "vocab_type": VocabType.BPE.value,
         "vocab_pre": None,
         "vocab_files": HF_TOKENIZER_BPE_FILES,
     },
@@ -235,8 +235,8 @@ HF_MODEL_MAP = (
     #     "model_repo": "databricks/dbrx-base",
     #     "model_arch": MODEL_ARCH.DBRX,
     #     "model_parts": 0,
-    #     "model_type": ModelFileType.SAFETENSORS,
-    #     "vocab_type": VocabType.BPE,
+    #     "model_type": ModelFileExtension.SAFETENSORS.value,
+    #     "vocab_type": VocabType.BPE.value,
     #     "vocab_pre": None,
     #     "vocab_files": HF_TOKENIZER_BPE_FILES,
     # },
@@ -244,8 +244,8 @@ HF_MODEL_MAP = (
         "model_repo": "jinaai/jina-embeddings-v2-base-es",
         "model_arch": MODEL_ARCH.JINA_BERT_V2,
         "model_parts": 1,
-        "model_type": ModelFileType.SAFETENSORS,
-        "vocab_type": VocabType.BPE,
+        "model_type": ModelFileExtension.SAFETENSORS.value,
+        "vocab_type": VocabType.BPE.value,
         "vocab_pre": None,
         "vocab_files": HF_TOKENIZER_BPE_FILES,
     },
@@ -253,8 +253,8 @@ HF_MODEL_MAP = (
         "model_repo": "jinaai/jina-embeddings-v2-base-de",
         "model_arch": MODEL_ARCH.JINA_BERT_V2,
         "model_parts": 1,
-        "model_type": ModelFileType.SAFETENSORS,
-        "vocab_type": VocabType.BPE,
+        "model_type": ModelFileExtension.SAFETENSORS.value,
+        "vocab_type": VocabType.BPE.value,
         "vocab_pre": None,
         "vocab_files": HF_TOKENIZER_BPE_FILES,
     },
@@ -262,8 +262,8 @@ HF_MODEL_MAP = (
         "model_repo": "microsoft/phi-1",
         "model_arch": MODEL_ARCH.PHI2,
         "model_parts": 1,
-        "model_type": ModelFileType.SAFETENSORS,
-        "vocab_type": VocabType.BPE,
+        "model_type": ModelFileExtension.SAFETENSORS.value,
+        "vocab_type": VocabType.BPE.value,
         "vocab_pre": None,
         "vocab_files": HF_TOKENIZER_BPE_FILES,
     },
@@ -271,8 +271,8 @@ HF_MODEL_MAP = (
         "model_repo": "microsoft/phi-1_5",
         "model_arch": MODEL_ARCH.PHI2,
         "model_parts": 1,
-        "model_type": ModelFileType.SAFETENSORS,
-        "vocab_type": VocabType.BPE,
+        "model_type": ModelFileExtension.SAFETENSORS.value,
+        "vocab_type": VocabType.BPE.value,
         "vocab_pre": None,
         "vocab_files": HF_TOKENIZER_BPE_FILES,
     },
@@ -280,8 +280,8 @@ HF_MODEL_MAP = (
         "model_repo": "microsoft/phi-2",
         "model_arch": MODEL_ARCH.PHI2,
         "model_parts": 2,
-        "model_type": ModelFileType.SAFETENSORS,
-        "vocab_type": VocabType.BPE,
+        "model_type": ModelFileExtension.SAFETENSORS.value,
+        "vocab_type": VocabType.BPE.value,
         "vocab_pre": None,
         "vocab_files": HF_TOKENIZER_BPE_FILES,
     },
@@ -325,7 +325,6 @@ metadata = []
 for model in HF_MODEL_MAP:
     model_repo = model["model_repo"]
     model_arch = model["model_arch"]
-    model_type = model["model_type"]
     vocab_type = model["vocab_type"]
 
     print("HUB_REPO:", model_repo, "LLAMA_ARCH:", MODEL_ARCH_NAMES[model_arch])
@@ -338,8 +337,6 @@ for model in HF_MODEL_MAP:
     hub_tokenizer.log_tokenizer_json_info(model_repo)
 
     model["model_arch"] = MODEL_ARCH_NAMES[model_arch]
-    model["model_type"] = hub_model.get_model_type_name(model_type)
-    model["vocab_type"] = hub_tokenizer.get_vocab_name(vocab_type)
 
     normalizer = hub_tokenizer.get_normalizer(model_repo)
     # NOTE: Normalizer may be one of null, Sequence, NFC, NFD, NFKC, NFKD...
@@ -351,22 +348,8 @@ for model in HF_MODEL_MAP:
     # Seems safe to assume most basic types are of type "Sequence"
     # I expect this to cause issues in the future. Needs more research.
     pre_tokenizer = hub_tokenizer.get_pre_tokenizer(model_repo)
-    if pre_tokenizer is None:
-        model["pre_tokenizer"] = hub_tokenizer.default_pre_tokenizer
-    elif isinstance(pre_tokenizer, dict):
-        # get the pre-tokenizer type, if any
-        ptype = pre_tokenizer.get("type", "")
-        ptoks = pre_tokenizer.get("pretokenizers", [])
-        if ptype == PreTokenizerType.SEQUENCE.value and ptoks:
-            tokens = []
-            for tok in ptoks:
-                tokens.append(tok.get(""))
-        else:
-            model["pre_tokenizer"] = hub_tokenizer.default_pre_tokenizer
-    else:
-        raise ValueError(
-            f"Expected a string or mapping and got {type(pre_tokenizer)} instead."
-        )
+    # extract the added tokens metadata
+    model["pre_tokenizer"] = pre_tokenizer
 
     added_tokens = hub_tokenizer.get_added_tokens(model_repo)
     # extract the added tokens metadata
