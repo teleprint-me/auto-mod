@@ -1,6 +1,6 @@
-# ignore binaries produced by make
-main
-alt
+# inclusive
+!requirements.txt
+!CMakeLists.txt
 
 # ignore local paths
 /build
@@ -10,6 +10,7 @@ alt
 # ignore local files
 *.ini
 *.txt
+*.json
 
 ####################
 # C++ ignore rules #
