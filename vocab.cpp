@@ -33,47 +33,70 @@ int main(int argc, char* argv[]) {
     }
 
     for (const auto &config : data) {
+        const std::string model_repo = config["model_repo"];
         const std::string model_arch = config["model_arch"];
+        const std::string vocab_type = config["vocab_type"];
 
-        if (model_arch == "stablelm") {
+        if (vocab_type == "BPE") {
+            std::cout << "Model Repository:\t" << model_repo << '\n';
             std::cout << "Model Architecture:\t" << model_arch << '\n';
 
             // normalizer and pre_tokenizer are either null or an object
             const nlohmann::json normalizer    = config["normalizer"];
             const nlohmann::json pre_tokenizer = config["pre_tokenizer"];
 
-            // Handle the cases where a key may or may not be present and have a null value
+            // NOTE: Normalizer may be one of null, Sequence, NFC, NFD, NFKC, NFKD...
+            // Seems to be null, Sequence, or NFC in most cases
+            // Attempt to handle cases where a key may or may not be present and have a null value
+            // Not sure whether to default to NFD or NFC if normalizer is null
+            // NOTE: The normalizer type key is not guaranteed
             if (!normalizer.is_null()) {
-                // NOTE: The normalizer type key is not guaranteed
                 const std::string norm_type = normalizer["type"];
-                // i don't know how to check for a "truthy" string in C++
-                std::cout << "Normalizer Type:" << norm_type << std::endl;
+                std::cout << "Normalizer Type:\t" << norm_type << std::endl;
                 // sequence is an array
                 if (0 == norm_type.compare("Sequence")) {
-                    // extract the array
-                    // each element in the array is an object
+                    const nlohmann::json normalizers = normalizer["normalizers"];
+                    if (normalizers.is_array()) {
+                        for (const auto &norm : normalizers.items()) {
+                            std::cout << "Norm Sequence Object:\t" << norm.key() << ":\t"
+                                      << norm.value() << std::endl;
+                        }
+                    }
                 } else {
                     // otherwise norm_type is an object potentially containing properties
                     // this varies from model to model
-                    // maybe we can just dump the entire object?
-                    // i don't know yet
+                    // maybe we can just dump the entire object? i don't know yet...
+                    for (const auto &norm : normalizer.items()) {
+                        std::cout << "Pre Object Pair:\t" << norm.key() << ":\t" << norm.value()
+                                  << std::endl;
+                    }
                 }
             }
 
+            // NOTE: The pre_tokenizer type is not guaranteed
             if (!pre_tokenizer.is_null()) {
-                // NOTE: The pre_tokenizer type is not guaranteed
                 const std::string pre_tokenizer_type = pre_tokenizer["type"];
-                // i don't know how to check for a "truthy" string in C++
                 std::cout << "Pre-tokenizer Type:" << pre_tokenizer_type << std::endl;
                 // sequence is an array
                 if (0 == pre_tokenizer_type.compare("Sequence")) {
                     // extract the array
                     // each element in the array is an object
+                    const nlohmann::json pretokenizers = pre_tokenizer["pretokenizers"];
+                    if (pretokenizers.is_array()) {
+                        for (const auto &pre : pretokenizers.items()) {
+                            std::cout << "Pre Sequence Object:\t" << pre.key() << ":\t"
+                                      << pre.value() << std::endl;
+                        }
+                    }
                 } else {
                     // otherwise pre_tokenizer_type is an object potentially containing properties
                     // this varies from model to model
                     // maybe we can just dump the entire object?
                     // i don't know yet
+                    for (const auto &pre : pre_tokenizer.items()) {
+                        std::cout << "Pre Object Pair:\t" << pre.key() << ":\t" << pre.value()
+                                  << std::endl;
+                    }
                 }
             }
         }
