@@ -5,21 +5,42 @@
 #include <nlohmann/json.hpp>
 
 int main(int argc, char* argv[]) {
-    const char* const   short_options = "f:";
+    if (1 == argc) {
+        puts("Usage: vocab [-f <file>] [-v <vocab-type>]");
+        return 1;
+    }
+
+    const char* const   short_options = "f:v:";
     const struct option long_options[]
-        = {{"registry-file", required_argument, nullptr, 'f'}, {nullptr}};
+        = {{"registry-file", required_argument, nullptr, 'f'},
+           {"vocab-type", optional_argument, nullptr, 'v'}};
 
     int  opt;
     char registry_file_path[1024];
+    char vocab_name[5] = "SPM"; // NOTE: avoid name conflict
 
     while ((opt = getopt_long(argc, argv, short_options, long_options, nullptr)) != -1) {
         switch (opt) {
             case 'f':
+                if (optarg == nullptr || strlen(optarg) < 1) {
+                    puts("Error: Invalid file path specified.");
+                    return 1;
+                }
+
                 strcpy(registry_file_path, optarg);
                 break;
 
+            case 'v':
+                if (optarg == nullptr || strlen(optarg) > 3) {
+                    puts("Error: Invalid vocab type specified.");
+                    return 1;
+                }
+
+                strncpy(vocab_name, optarg, 5);
+                break;
+
             default:
-                puts("Usage: vocab [-f <file>]");
+                puts("Usage: vocab [-f <file>] [-v <vocab-type>]");
                 return 1;
         }
     }
@@ -37,7 +58,7 @@ int main(int argc, char* argv[]) {
         const std::string model_arch = config["model_arch"];
         const std::string vocab_type = config["vocab_type"];
 
-        if (vocab_type == "BPE") {
+        if (vocab_type == vocab_name) {
             std::cout << "Model Repository:\t" << model_repo << '\n';
             std::cout << "Model Architecture:\t" << model_arch << '\n';
 
