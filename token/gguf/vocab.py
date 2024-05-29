@@ -16,11 +16,9 @@ from typing import (
     runtime_checkable,
 )
 
-from sentencepiece import SentencePieceProcessor
-
 import gguf
-
-from .gguf_writer import GGUFWriter
+from gguf.gguf_writer import GGUFWriter
+from sentencepiece import SentencePieceProcessor
 
 logger = logging.getLogger(__name__)
 
