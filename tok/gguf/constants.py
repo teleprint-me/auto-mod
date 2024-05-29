@@ -797,19 +797,19 @@ GGUF_MODEL_TENSOR_SKIP: dict[GGUF_MODEL_ARCH, list[GGUF_MODEL_TENSOR]] = {
 #
 # types
 #
-class RopeScalingType(Enum):
+class GGUFRopeScalingType(Enum):
     NONE = "none"
     LINEAR = "linear"
     YARN = "yarn"
 
 
-class PoolingType(IntEnum):
+class GGUFPoolingType(IntEnum):
     NONE = 0
     MEAN = 1
     CLS = 2
 
 
-class GGMLQuantizationType(IntEnum):
+class GGUFQuantizationType(IntEnum):
     F32 = 0
     F16 = 1
     Q4_0 = 2
@@ -846,7 +846,7 @@ class GGMLQuantizationType(IntEnum):
 
 # from llama_ftype in llama.h
 # ALL VALUES SHOULD BE THE SAME HERE AS THEY ARE OVER THERE.
-class LlamaFileType(IntEnum):
+class GGUFFileType(IntEnum):
     ALL_F32 = 0
     MOSTLY_F16 = 1  # except 1d tensors
     MOSTLY_Q4_0 = 2  # except 1d tensors
@@ -884,11 +884,11 @@ class LlamaFileType(IntEnum):
     GUESSED = 1024  # not specified in the model file
 
 
-LLAMA_FILE_TYPE_NAMES: dict[LlamaFileType, str] = {
-    LlamaFileType.ALL_F32: "F32",
-    LlamaFileType.MOSTLY_F16: "F16",
-    LlamaFileType.MOSTLY_BF16: "BF16",
-    LlamaFileType.MOSTLY_Q8_0: "Q8_0",
+GGUF_FILE_TYPE_NAMES: dict[GGUFFileType, str] = {
+    GGUFFileType.ALL_F32: "F32",
+    GGUFFileType.MOSTLY_F16: "F16",
+    GGUFFileType.MOSTLY_BF16: "BF16",
+    GGUFFileType.MOSTLY_Q8_0: "Q8_0",
 }
 
 
@@ -931,36 +931,36 @@ class GGUFValueType(IntEnum):
 
 # Items here are (block size, type size)
 QK_K = 256
-GGML_QUANT_SIZES: dict[GGMLQuantizationType, tuple[int, int]] = {
-    GGMLQuantizationType.F32: (1, 4),
-    GGMLQuantizationType.F16: (1, 2),
-    GGMLQuantizationType.Q4_0: (32, 2 + 16),
-    GGMLQuantizationType.Q4_1: (32, 2 + 2 + 16),
-    GGMLQuantizationType.Q5_0: (32, 2 + 4 + 16),
-    GGMLQuantizationType.Q5_1: (32, 2 + 2 + 4 + 16),
-    GGMLQuantizationType.Q8_0: (32, 2 + 32),
-    GGMLQuantizationType.Q8_1: (32, 4 + 4 + 32),
-    GGMLQuantizationType.Q2_K: (256, 2 + 2 + QK_K // 16 + QK_K // 4),
-    GGMLQuantizationType.Q3_K: (256, 2 + QK_K // 4 + QK_K // 8 + 12),
-    GGMLQuantizationType.Q4_K: (256, 2 + 2 + QK_K // 2 + 12),
-    GGMLQuantizationType.Q5_K: (256, 2 + 2 + QK_K // 2 + QK_K // 8 + 12),
-    GGMLQuantizationType.Q6_K: (256, 2 + QK_K // 2 + QK_K // 4 + QK_K // 16),
-    GGMLQuantizationType.Q8_K: (256, 4 + QK_K + QK_K // 8),
-    GGMLQuantizationType.IQ2_XXS: (256, 2 + QK_K // 4),
-    GGMLQuantizationType.IQ2_XS: (256, 2 + QK_K // 4 + QK_K // 32),
-    GGMLQuantizationType.IQ3_XXS: (256, 2 + QK_K // 4 + QK_K // 8),
-    GGMLQuantizationType.IQ1_S: (256, 2 + QK_K // 8 + QK_K // 16),
-    GGMLQuantizationType.IQ4_NL: (32, 2 + 16),
-    GGMLQuantizationType.IQ3_S: (256, 2 + QK_K // 4 + QK_K // 8 + QK_K // 32 + 4),
-    GGMLQuantizationType.IQ2_S: (256, 2 + QK_K // 4 + QK_K // 16),
-    GGMLQuantizationType.IQ4_XS: (256, 2 + 2 + QK_K // 2 + QK_K // 64),
-    GGMLQuantizationType.I8: (1, 1),
-    GGMLQuantizationType.I16: (1, 2),
-    GGMLQuantizationType.I32: (1, 4),
-    GGMLQuantizationType.I64: (1, 8),
-    GGMLQuantizationType.F64: (1, 8),
-    GGMLQuantizationType.IQ1_M: (256, QK_K // 8 + QK_K // 16 + QK_K // 32),
-    GGMLQuantizationType.BF16: (1, 2),
+GGML_QUANT_SIZES: dict[GGUFQuantizationType, tuple[int, int]] = {
+    GGUFQuantizationType.F32: (1, 4),
+    GGUFQuantizationType.F16: (1, 2),
+    GGUFQuantizationType.Q4_0: (32, 2 + 16),
+    GGUFQuantizationType.Q4_1: (32, 2 + 2 + 16),
+    GGUFQuantizationType.Q5_0: (32, 2 + 4 + 16),
+    GGUFQuantizationType.Q5_1: (32, 2 + 2 + 4 + 16),
+    GGUFQuantizationType.Q8_0: (32, 2 + 32),
+    GGUFQuantizationType.Q8_1: (32, 4 + 4 + 32),
+    GGUFQuantizationType.Q2_K: (256, 2 + 2 + QK_K // 16 + QK_K // 4),
+    GGUFQuantizationType.Q3_K: (256, 2 + QK_K // 4 + QK_K // 8 + 12),
+    GGUFQuantizationType.Q4_K: (256, 2 + 2 + QK_K // 2 + 12),
+    GGUFQuantizationType.Q5_K: (256, 2 + 2 + QK_K // 2 + QK_K // 8 + 12),
+    GGUFQuantizationType.Q6_K: (256, 2 + QK_K // 2 + QK_K // 4 + QK_K // 16),
+    GGUFQuantizationType.Q8_K: (256, 4 + QK_K + QK_K // 8),
+    GGUFQuantizationType.IQ2_XXS: (256, 2 + QK_K // 4),
+    GGUFQuantizationType.IQ2_XS: (256, 2 + QK_K // 4 + QK_K // 32),
+    GGUFQuantizationType.IQ3_XXS: (256, 2 + QK_K // 4 + QK_K // 8),
+    GGUFQuantizationType.IQ1_S: (256, 2 + QK_K // 8 + QK_K // 16),
+    GGUFQuantizationType.IQ4_NL: (32, 2 + 16),
+    GGUFQuantizationType.IQ3_S: (256, 2 + QK_K // 4 + QK_K // 8 + QK_K // 32 + 4),
+    GGUFQuantizationType.IQ2_S: (256, 2 + QK_K // 4 + QK_K // 16),
+    GGUFQuantizationType.IQ4_XS: (256, 2 + 2 + QK_K // 2 + QK_K // 64),
+    GGUFQuantizationType.I8: (1, 1),
+    GGUFQuantizationType.I16: (1, 2),
+    GGUFQuantizationType.I32: (1, 4),
+    GGUFQuantizationType.I64: (1, 8),
+    GGUFQuantizationType.F64: (1, 8),
+    GGUFQuantizationType.IQ1_M: (256, QK_K // 8 + QK_K // 16 + QK_K // 32),
+    GGUFQuantizationType.BF16: (1, 2),
 }
 
 
