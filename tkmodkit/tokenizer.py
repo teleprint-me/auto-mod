@@ -1,0 +1,31 @@
+class Tokenizer:
+    MODEL = "tokenizer.ggml.model"  # STRING: e.g. llama
+    TYPE = "tokenizer.ggml.type"  # STRING: BPE, SPM, WPM, etc.
+    NORM = "tokenizer.ggml.norm"  # OBJECT {"type": "ByteLevel"}
+    PRE = "tokenizer.ggml.pre"  # OBJECT {"type": "ByteLevel"}
+    ADDED = "tokenizer.ggml.added"  # ARRAY of OBJECTs {"id": 1}
+    VOCAB = "tokenizer.ggml.vocab"
+    MERGES = "tokenizer.ggml.merges"
+    TOKEN_TYPE = "tokenizer.ggml.token_type"
+    TOKEN_TYPE_COUNT = "tokenizer.ggml.token_type_count"  # BERT token types
+    SCORES = "tokenizer.ggml.scores"  # Word Piece Only
+    BOS_ID = "tokenizer.ggml.bos_token_id"
+    EOS_ID = "tokenizer.ggml.eos_token_id"
+    UNK_ID = "tokenizer.ggml.unknown_token_id"
+    SEP_ID = "tokenizer.ggml.seperator_token_id"
+    PAD_ID = "tokenizer.ggml.padding_token_id"
+    CLS_ID = "tokenizer.ggml.cls_token_id"
+    MASK_ID = "tokenizer.ggml.mask_token_id"
+    ADD_BOS = "tokenizer.ggml.add_bos_token"
+    ADD_EOS = "tokenizer.ggml.add_eos_token"
+    ADD_PREFIX = "tokenizer.ggml.add_space_prefix"
+    HF_JSON = "tokenizer.huggingface.json"
+    RWKV = "tokenizer.rwkv.world"
+    CHAT_TEMPLATE = "tokenizer.chat_template"
+    CHAT_TEMPLATE_N = "tokenizer.chat_template.{name}"
+    CHAT_TEMPLATES = "tokenizer.chat_templates"
+    # FIM/Infill special tokens constants
+    PREFIX_ID = "tokenizer.ggml.prefix_token_id"
+    SUFFIX_ID = "tokenizer.ggml.suffix_token_id"
+    MIDDLE_ID = "tokenizer.ggml.middle_token_id"
+    EOT_ID = "tokenizer.ggml.eot_token_id"
