@@ -931,7 +931,7 @@ class GGUFValueType(IntEnum):
 
 # Items here are (block size, type size)
 QK_K = 256
-GGML_QUANT_SIZES: dict[GGUFQuantizationType, tuple[int, int]] = {
+GGUF_QUANT_SIZES: dict[GGUFQuantizationType, tuple[int, int]] = {
     GGUFQuantizationType.F32: (1, 4),
     GGUFQuantizationType.F16: (1, 2),
     GGUFQuantizationType.Q4_0: (32, 2 + 16),
@@ -967,7 +967,7 @@ GGML_QUANT_SIZES: dict[GGUFQuantizationType, tuple[int, int]] = {
 #
 # Tokenizer Types
 #
-class TokenType(IntEnum):
+class ModelTokenType(IntEnum):
     NORMAL = 1
     UNKNOWN = 2
     CONTROL = 3
@@ -976,7 +976,7 @@ class TokenType(IntEnum):
     BYTE = 6
 
 
-class VocabType(Enum):
+class ModelTokenizerType(Enum):
     SPM = "SPM"  # SentencePiece LLaMa tokenizer
     BPE = "BPE"  # BytePair GPT-2 tokenizer
     WPM = "WPM"  # WordPiece BERT tokenizer
@@ -998,7 +998,7 @@ class ModelFileExtension(Enum):
 #
 # Normalizer Types
 #
-class NormalizerType(Enum):
+class ModelNormalizerType(Enum):
     SEQUENCE = "Sequence"
     NFC = "NFC"
     NFD = "NFD"
@@ -1009,22 +1009,23 @@ class NormalizerType(Enum):
 #
 # Pre-tokenizer Types
 #
-class PreTokenizerType(Enum):
-    SEQUENCE = "Sequence"
+class ModelPreTokenizerType(Enum):
+    WHITESPACE = "Whitespace"
+    METASPACE = "Metaspace"
     BYTE_LEVEL = "ByteLevel"
     BERT_PRE_TOKENIZER = "BertPreTokenizer"
-    METASPACE = "Metaspace"
+    SEQUENCE = "Sequence"
 
 
 #
 # HF Vocab Files
 #
-HF_TOKENIZER_BPE_FILES = (
+MODEL_TOKENIZER_BPE_FILES = (
     "config.json",
     "tokenizer_config.json",
     "tokenizer.json",
 )
-HF_TOKENIZER_SPM_FILES = HF_TOKENIZER_BPE_FILES + ("tokenizer.model",)
+MODEL_TOKENIZER_SPM_FILES = MODEL_TOKENIZER_BPE_FILES + ("tokenizer.model",)
 
 #
 # Pre-tokenization Regular Expressions
