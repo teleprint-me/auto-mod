@@ -17,20 +17,17 @@ def parquet_to_plaintext(path: Path) -> None:
     dataset: DatasetDict = load_dataset(str(path))
 
     def process_subset(data: tuple[str, Dataset]):
-        name, subset = data
         text = ""
-
+        name, subset = data
         for row in tqdm(subset, total=len(subset)):
             text += row["text"]
 
         output_file_path = path / f"wiki-{name}.raw"
-
         print(f"Writing {output_file_path}")
 
         try:
             with open(output_file_path, "w") as f:
                 f.write(text)
-
         except (OSError, IOError) as e:
             print(f"Error while writing to file '{output_file_path}': {e}")
 
@@ -47,8 +44,7 @@ def get_raw_file_paths(path: Path) -> list[str]:
 
 
 def main():
-    parser = argparse.ArgumentParser()
-
+    parser = argparse.ArgumentParser(description="Convert parquet files to plaintext")
     parser.add_argument(
         "-d",
         "--dir-path",
@@ -57,15 +53,11 @@ def main():
     )
 
     args = parser.parse_args()
-
     path = Path(args.dir_path)
-
     if not path.is_dir():
         raise FileNotFoundError(f"{path} does not exist!")
 
-    # Load the dataset
     parquet_to_plaintext(path)
-
     for raw in get_raw_file_paths(path):
         print(raw)
 
