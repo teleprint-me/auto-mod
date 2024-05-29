@@ -25,12 +25,30 @@ from .gguf_writer import GGUFWriter
 logger = logging.getLogger(__name__)
 
 
-class SpecialVocab:
+@runtime_checkable
+class Vocab(Protocol):
+    tokenizer_model: ClassVar[str] = "no_vocab"
+    name: ClassVar[str] = "no_vocab"
+    vocab_size: int
+    added_tokens_dict: dict[str, int]
+    added_tokens_list: list[str]
+    fname_tokenizer: Path
     merges: list[str]
     add_special_token: dict[str, bool]
     special_token_ids: dict[str, int]
     chat_template: str | Sequence[Mapping[str, str]] | None
 
+    def __init__(self, base_path: Path):
+        pass
+
+    def __repr__(self) -> str:
+        return "<NoVocab for a model without integrated vocabulary>"
+
+    def all_tokens(self) -> Iterable[tuple[bytes, float, gguf.TokenType]]:
+        pass
+
+
+class SpecialVocab(Vocab):
     def __init__(
         self,
         path: str | os.PathLike[str],
@@ -209,34 +227,6 @@ class SpecialVocab:
         for typ in self.special_token_types:
             self._set_special_token(typ, config.get(f"{typ}_token_id"))
         return True
-
-
-@runtime_checkable
-class BaseVocab(Protocol):
-    tokenizer_model: ClassVar[str]
-    name: ClassVar[str]
-
-
-@runtime_checkable
-class Vocab(BaseVocab, Protocol):
-    vocab_size: int
-    added_tokens_dict: dict[str, int]
-    added_tokens_list: list[str]
-    fname_tokenizer: Path
-
-    def __init__(self, base_path: Path):
-        pass
-
-    def all_tokens(self) -> Iterable[tuple[bytes, float, gguf.TokenType]]:
-        pass
-
-
-class NoVocab(BaseVocab):
-    tokenizer_model = "no_vocab"
-    name = "no_vocab"
-
-    def __repr__(self) -> str:
-        return "<NoVocab for a model without integrated vocabulary>"
 
 
 class BpeVocab(Vocab):
