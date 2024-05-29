@@ -188,7 +188,7 @@ class GGUF_MODEL_TENSOR(IntEnum):
     SSM_OUT = auto()
 
 
-MODEL_ARCH_NAMES: dict[GGUF_MODEL_ARCH, str] = {
+GGUF_MODEL_ARCH_NAMES: dict[GGUF_MODEL_ARCH, str] = {
     GGUF_MODEL_ARCH.LLAMA: "llama",
     GGUF_MODEL_ARCH.FALCON: "falcon",
     GGUF_MODEL_ARCH.BAICHUAN: "baichuan",
