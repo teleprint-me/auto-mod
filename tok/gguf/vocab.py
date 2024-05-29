@@ -36,14 +36,16 @@ class Vocab(Protocol):
     special_token_ids: dict[str, int]
     chat_template: str | Sequence[Mapping[str, str]] | None
 
-    def __init__(self, base_path: Path):
-        pass
+    def __init__(self, path: Path):
+        raise NotImplementedError("Missing 'Vocab' constructor definition")
 
     def __repr__(self) -> str:
         return "<NoVocab for a model without integrated vocabulary>"
 
     def all_tokens(self) -> Iterable[tuple[bytes, float, gguf.TokenType]]:
-        pass
+        raise NotImplementedError(
+            f"Missing '{self.__name__}.all_tokens' method definition"
+        )
 
 
 class SpecialVocab(Vocab):
@@ -231,23 +233,23 @@ class BpeVocab(Vocab):
     tokenizer_model = "gpt2"
     name = "bpe"
 
-    def __init__(self, base_path: Path):
+    def __init__(self, path: Path):
         added_tokens: dict[str, int] = {}
 
-        if (fname_tokenizer := base_path / "vocab.json").exists():
+        if (fname_tokenizer := path / "vocab.json").exists():
             # "slow" tokenizer
             with open(fname_tokenizer, encoding="utf-8") as f:
                 self.vocab = json.load(f)
 
             try:
                 # FIXME: Verify that added tokens here _cannot_ overlap with the main vocab.
-                with open(base_path / "added_tokens.json", encoding="utf-8") as f:
+                with open(path / "added_tokens.json", encoding="utf-8") as f:
                     added_tokens = json.load(f)
             except FileNotFoundError:
                 pass
         else:
             # "fast" tokenizer
-            fname_tokenizer = base_path / "tokenizer.json"
+            fname_tokenizer = path / "tokenizer.json"
 
             # if this fails, FileNotFoundError propagates to caller
             with open(fname_tokenizer, encoding="utf-8") as f:
@@ -311,16 +313,16 @@ class SentencePieceVocab(Vocab):
     tokenizer_model = "llama"
     name = "spm"
 
-    def __init__(self, base_path: Path):
+    def __init__(self, path: Path):
         added_tokens: dict[str, int] = {}
-        if (fname_tokenizer := base_path / "tokenizer.model").exists():
+        if (fname_tokenizer := path / "tokenizer.model").exists():
             # normal location
             try:
-                with open(base_path / "added_tokens.json", encoding="utf-8") as f:
+                with open(path / "added_tokens.json", encoding="utf-8") as f:
                     added_tokens = json.load(f)
             except FileNotFoundError:
                 pass
-        elif not (fname_tokenizer := base_path.parent / "tokenizer.model").exists():
+        elif not (fname_tokenizer := path.parent / "tokenizer.model").exists():
             # not found in alternate location either
             raise FileNotFoundError("Cannot find tokenizer.model")
 
@@ -387,8 +389,8 @@ class LlamaHfVocab(Vocab):
     tokenizer_model = "llama"
     name = "hfft"
 
-    def __init__(self, base_path: Path):
-        fname_tokenizer = base_path / "tokenizer.json"
+    def __init__(self, path: Path):
+        fname_tokenizer = path / "tokenizer.json"
         # if this fails, FileNotFoundError propagates to caller
         with open(fname_tokenizer, encoding="utf-8") as f:
             tokenizer_json = json.load(f)
@@ -421,8 +423,8 @@ class LlamaHfVocab(Vocab):
         # Allow the tokenizer to default to slow or fast versions.
         # Explicitly set tokenizer to use local paths.
         self.tokenizer = AutoTokenizer.from_pretrained(
-            base_path,
-            cache_dir=base_path,
+            path,
+            cache_dir=path,
             local_files_only=True,
         )
         assert self.tokenizer.is_fast  # assume tokenizer.json is used
