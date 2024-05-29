@@ -4,28 +4,28 @@ data2txt.py - convert parquet files to plaintext
 """
 
 import argparse
-import multiprocessing
 import os
+import multiprocessing
 
-from datasets import load_dataset, Dataset
+from datasets import load_dataset, Dataset, DatasetDict
 from pathlib import Path
 from tqdm import tqdm
 
 
-def parquet_to_plaintext(path: Path, dataset: Dataset):
+def parquet_to_plaintext(path: Path) -> None:
     # Convert parquet files into plaintext files
-    for index, subset in enumerate(dataset.items()):
-        name, rows = subset
+    dataset = load_dataset(str(path))  # DatasetDict
+    for index, subset in enumerate(dataset.items()):  # int, tuple
+        name, rows = subset  # str, Dataset
         print(f"Converting subset {name} to plaintext")
 
         # Concatenate all text features for a given subset
         text = ""
-        for row in tqdm(rows, total=len(rows)):
+        for row in tqdm(rows, total=len(rows)):  # str
             text += "\n".join(f"{row['text'].strip().split('\n')}")
 
         # Write the concatenated text to a plaintext file
         output_file_path = path / f"{name}-{index:05}-of-{len(dataset.keys()):05}.txt"
-
         print(f"Writing {output_file_path}")
 
         try:
@@ -33,6 +33,12 @@ def parquet_to_plaintext(path: Path, dataset: Dataset):
                 f.write(text)
         except (OSError, IOError) as e:
             print(f"Error while writing to file '{output_file_path}': {e}")
+
+
+def get_raw_file_paths(path: Path) -> list[str]:
+    return [
+        ent.path for ent in os.scandir(str(path)) if Path(ent.path).suffix == ".txt"
+    ]
 
 
 def main():
@@ -50,11 +56,8 @@ def main():
         raise FileNotFoundError(f"{path} does not exist!")
 
     # Load the dataset
-    dataset = load_dataset(str(path))
-    parquet_to_plaintext(dataset)
-    raw_files = [
-        ent for ent in os.scandir(str(path)) if Path(ent.path).suffix == ".txt"
-    ]
+    parquet_to_plaintext(path)
+    raw_files = get_raw_file_paths(path)
     print(raw_files)
 
 
