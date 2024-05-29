@@ -1026,17 +1026,3 @@ MODEL_TOKENIZER_BPE_FILES = (
     "tokenizer.json",
 )
 MODEL_TOKENIZER_SPM_FILES = MODEL_TOKENIZER_BPE_FILES + ("tokenizer.model",)
-
-#
-# Pre-tokenization Regular Expressions
-#
-
-# NOTE: `tokenizers` defaults to OpenAI GPT-2 `ByteLevel` RegEx.
-# The pattern uses perl regex and formatting is arbitrary.
-# https://github.com/openai/gpt-2/blob/master/src/encoder.py#L53
-# https://github.com/huggingface/tokenizers/blob/main/tokenizers/src/pre_tokenizers/byte_level.rs#L40-L42
-
-# These are fallback values if the pre-tokenizer cannot be dynamically discovered at runtime.
-GPT_PRE_TOKENIZER_DEFAULT = (
-    "'s|'t|'re|'ve|'m|'ll|'d| ?\\p{L}+| ?\\p{N}+| ?[^\\s\\p{L}\\p{N}]+|\\s+(?!\\S)|\\s+",
-)
