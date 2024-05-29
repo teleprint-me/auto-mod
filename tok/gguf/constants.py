@@ -13,9 +13,9 @@ GGML_QUANT_VERSION = 2  # GGML_QNT_VERSION from ggml.h
 
 
 #
-# metadata keys
+# model metadata keys
 #
-class Keys:
+class GGUFMetadataKeys:
     class General:
         ARCHITECTURE = "general.architecture"
         QUANTIZATION_VERSION = "general.quantization_version"
