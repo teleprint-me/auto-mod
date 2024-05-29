@@ -1,7 +1,3 @@
-# inclusive
-!requirements.txt
-!CMakeLists.txt
-
 # ignore local paths
 /models
 /build
