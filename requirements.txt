@@ -1,0 +1,10 @@
+bpython
+isort
+tqdm
+pyarrow
+numpy
+sentencepiece
+datasets
+tokenizers
+transformers
+huggingface_hub
