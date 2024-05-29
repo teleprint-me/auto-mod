@@ -35,7 +35,7 @@
     "editor.formatOnSave": true,
     "editor.formatOnPaste": false,
     "editor.codeActionsOnSave": {
-      "source.organizeImports": "explicit"
+      "source.organizeImports": "never"
     }
   },
   "isort.args": ["--profile", "black"],
