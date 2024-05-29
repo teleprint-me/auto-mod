@@ -4,6 +4,7 @@ tqdm
 pyarrow
 numpy
 sentencepiece
+tiktoken
 datasets
 tokenizers
 transformers
