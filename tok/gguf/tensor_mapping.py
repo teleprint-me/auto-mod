@@ -2,13 +2,18 @@ from __future__ import annotations
 
 from typing import Sequence
 
-from .constants import MODEL_ARCH, MODEL_TENSOR, MODEL_TENSORS, TENSOR_NAMES
+from .constants import (
+    GGUF_MODEL_ARCH,
+    GGUF_MODEL_TENSOR,
+    GGUF_MODEL_TENSORS,
+    GGUF_TENSOR_NAMES,
+)
 
 
 class TensorNameMap:
-    mappings_cfg: dict[MODEL_TENSOR, tuple[str, ...]] = {
+    mappings_cfg: dict[GGUF_MODEL_TENSOR, tuple[str, ...]] = {
         # Token embeddings
-        MODEL_TENSOR.TOKEN_EMBD: (
+        GGUF_MODEL_TENSOR.TOKEN_EMBD: (
             "gpt_neox.embed_in",  # gptneox
             "transformer.wte",  # gpt2 gpt-j mpt refact qwen dbrx
             "transformer.word_embeddings",  # falcon
@@ -26,23 +31,23 @@ class TensorNameMap:
             "transformer.in_out_embed",  # Grok
         ),
         # Token type embeddings
-        MODEL_TENSOR.TOKEN_TYPES: (
+        GGUF_MODEL_TENSOR.TOKEN_TYPES: (
             "embeddings.token_type_embeddings",  # bert nomic-bert
         ),
         # Normalization of token embeddings
-        MODEL_TENSOR.TOKEN_EMBD_NORM: (
+        GGUF_MODEL_TENSOR.TOKEN_EMBD_NORM: (
             "word_embeddings_layernorm",  # bloom
             "embeddings.LayerNorm",  # bert
             "emb_ln",  # nomic-bert
         ),
         # Position embeddings
-        MODEL_TENSOR.POS_EMBD: (
+        GGUF_MODEL_TENSOR.POS_EMBD: (
             "transformer.wpe",  # gpt2
             "embeddings.position_embeddings",  # bert
             "wpe",  # gpt2
         ),
         # Output
-        MODEL_TENSOR.OUTPUT: (
+        GGUF_MODEL_TENSOR.OUTPUT: (
             "embed_out",  # gptneox
             "lm_head",  # gpt2 mpt falcon llama-hf baichuan qwen mamba dbrx
             "output",  # llama-pth bloom internlm2
@@ -50,7 +55,7 @@ class TensorNameMap:
             "lm_head.linear",  # phi2
         ),
         # Output norm
-        MODEL_TENSOR.OUTPUT_NORM: (
+        GGUF_MODEL_TENSOR.OUTPUT_NORM: (
             "gpt_neox.final_layer_norm",  # gptneox
             "transformer.ln_f",  # gpt2 gpt-j falcon
             "model.norm",  # llama-hf baichuan internlm2
@@ -65,12 +70,12 @@ class TensorNameMap:
             "transformer.rms_norm",  # Grok
         ),
         # Rope frequencies
-        MODEL_TENSOR.ROPE_FREQS: ("rope.freqs",),  # llama-pth
+        GGUF_MODEL_TENSOR.ROPE_FREQS: ("rope.freqs",),  # llama-pth
     }
 
-    block_mappings_cfg: dict[MODEL_TENSOR, tuple[str, ...]] = {
+    block_mappings_cfg: dict[GGUF_MODEL_TENSOR, tuple[str, ...]] = {
         # Attention norm
-        MODEL_TENSOR.ATTN_NORM: (
+        GGUF_MODEL_TENSOR.ATTN_NORM: (
             "gpt_neox.layers.{bid}.input_layernorm",  # gptneox
             "transformer.h.{bid}.ln_1",  # gpt2 gpt-j refact qwen
             "transformer.blocks.{bid}.norm_1",  # mpt
@@ -91,9 +96,9 @@ class TensorNameMap:
             "transformer.blocks.{bid}.norm_attn_norm.norm_1",  # dbrx
         ),
         # Attention norm 2
-        MODEL_TENSOR.ATTN_NORM_2: ("transformer.h.{bid}.ln_attn",),  # falcon40b
+        GGUF_MODEL_TENSOR.ATTN_NORM_2: ("transformer.h.{bid}.ln_attn",),  # falcon40b
         # Attention query-key-value
-        MODEL_TENSOR.ATTN_QKV: (
+        GGUF_MODEL_TENSOR.ATTN_QKV: (
             "gpt_neox.layers.{bid}.attention.query_key_value",  # gptneox
             "transformer.h.{bid}.attn.c_attn",  # gpt2 qwen
             "transformer.blocks.{bid}.attn.Wqkv",  # mpt
@@ -108,7 +113,7 @@ class TensorNameMap:
             "model.layers.{bid}.self_attn.qkv_proj",  # phi3
         ),
         # Attention query
-        MODEL_TENSOR.ATTN_Q: (
+        GGUF_MODEL_TENSOR.ATTN_Q: (
             "model.layers.{bid}.self_attn.q_proj",  # llama-hf
             "layers.{bid}.attention.wq",  # llama-pth
             "encoder.layer.{bid}.attention.self.query",  # bert
@@ -118,7 +123,7 @@ class TensorNameMap:
             "transformer.decoder_layer.{bid}.multi_head_attention.query",  # Grok
         ),
         # Attention key
-        MODEL_TENSOR.ATTN_K: (
+        GGUF_MODEL_TENSOR.ATTN_K: (
             "model.layers.{bid}.self_attn.k_proj",  # llama-hf
             "layers.{bid}.attention.wk",  # llama-pth
             "encoder.layer.{bid}.attention.self.key",  # bert
@@ -129,7 +134,7 @@ class TensorNameMap:
             "transformer.decoder_layer.{bid}.multi_head_attention.key",  # Grok
         ),
         # Attention value
-        MODEL_TENSOR.ATTN_V: (
+        GGUF_MODEL_TENSOR.ATTN_V: (
             "model.layers.{bid}.self_attn.v_proj",  # llama-hf
             "layers.{bid}.attention.wv",  # llama-pth
             "encoder.layer.{bid}.attention.self.value",  # bert
@@ -140,7 +145,7 @@ class TensorNameMap:
             "transformer.decoder_layer.{bid}.multi_head_attention.value",  # Grok
         ),
         # Attention output
-        MODEL_TENSOR.ATTN_OUT: (
+        GGUF_MODEL_TENSOR.ATTN_OUT: (
             "gpt_neox.layers.{bid}.attention.dense",  # gptneox
             "transformer.h.{bid}.attn.c_proj",  # gpt2 refact qwen
             "transformer.blocks.{bid}.attn.out_proj",  # mpt
@@ -161,21 +166,21 @@ class TensorNameMap:
             "transformer.blocks.{bid}.norm_attn_norm.attn.out_proj",  # dbrx
         ),
         # Attention output norm
-        MODEL_TENSOR.ATTN_OUT_NORM: (
+        GGUF_MODEL_TENSOR.ATTN_OUT_NORM: (
             "encoder.layer.{bid}.attention.output.LayerNorm",  # bert
             "encoder.layers.{bid}.norm1",  # nomic-bert
             "transformer.decoder_layer.{bid}.rms_norm_1",  # Grok
             "transformer.blocks.{bid}.norm_attn_norm.norm_2",  # dbrx
         ),
         # Rotary embeddings
-        MODEL_TENSOR.ATTN_ROT_EMBD: (
+        GGUF_MODEL_TENSOR.ATTN_ROT_EMBD: (
             "model.layers.{bid}.self_attn.rotary_emb.inv_freq",  # llama-hf
             "layers.{bid}.attention.inner_attention.rope.freqs",  # llama-pth
             "model.layers.layers.{bid}.self_attn.rotary_emb.inv_freq",  # plamo
             "transformer.h.{bid}.attn.rotary_emb.inv_freq",  # codeshell
         ),
         # Feed-forward norm
-        MODEL_TENSOR.FFN_NORM: (
+        GGUF_MODEL_TENSOR.FFN_NORM: (
             "gpt_neox.layers.{bid}.post_attention_layernorm",  # gptneox
             "transformer.h.{bid}.ln_2",  # gpt2 refact qwen
             "h.{bid}.post_attention_layernorm",  # bloom
@@ -188,18 +193,18 @@ class TensorNameMap:
             "model.layers.{bid}.ffn_norm",  # internlm2
             "transformer.decoder_layer.{bid}.rms_norm_2",  # Grok
         ),
-        MODEL_TENSOR.FFN_GATE_INP: (
+        GGUF_MODEL_TENSOR.FFN_GATE_INP: (
             "layers.{bid}.feed_forward.gate",  # mixtral
             "model.layers.{bid}.block_sparse_moe.gate",  # mixtral
             "model.layers.{bid}.mlp.gate",  # qwen2moe
             "transformer.decoder_layer.{bid}.router",  # Grok
             "transformer.blocks.{bid}.ffn.router.layer",  # dbrx
         ),
-        MODEL_TENSOR.FFN_GATE_INP_SHEXP: (
+        GGUF_MODEL_TENSOR.FFN_GATE_INP_SHEXP: (
             "model.layers.{bid}.mlp.shared_expert_gate",  # qwen2moe
         ),
         # Feed-forward up
-        MODEL_TENSOR.FFN_UP: (
+        GGUF_MODEL_TENSOR.FFN_UP: (
             "gpt_neox.layers.{bid}.mlp.dense_h_to_4h",  # gptneox
             "transformer.h.{bid}.mlp.c_fc",  # gpt2
             "transformer.blocks.{bid}.ffn.up_proj",  # mpt
@@ -224,19 +229,19 @@ class TensorNameMap:
             "encoder.layer.{bid}.mlp.gated_layers_v",  # jina-bert-v2
             "model.layers.{bid}.residual_mlp.w3",  # arctic
         ),
-        MODEL_TENSOR.FFN_UP_EXP: (
+        GGUF_MODEL_TENSOR.FFN_UP_EXP: (
             "layers.{bid}.feed_forward.experts.w3",  # mixtral (merged)
             "transformer.decoder_layer.{bid}.moe.linear_v",  # Grok (merged)
             "transformer.blocks.{bid}.ffn.experts.mlp.v1",  # dbrx
             "model.layers.{bid}.mlp.experts.up_proj",  # qwen2moe (merged)
         ),
-        MODEL_TENSOR.FFN_UP_SHEXP: (
+        GGUF_MODEL_TENSOR.FFN_UP_SHEXP: (
             "model.layers.{bid}.mlp.shared_expert.up_proj",  # qwen2moe
         ),
         # AWQ-activation gate
-        MODEL_TENSOR.FFN_ACT: ("transformer.blocks.{bid}.ffn.act",),  # mpt
+        GGUF_MODEL_TENSOR.FFN_ACT: ("transformer.blocks.{bid}.ffn.act",),  # mpt
         # Feed-forward gate
-        MODEL_TENSOR.FFN_GATE: (
+        GGUF_MODEL_TENSOR.FFN_GATE: (
             "model.layers.{bid}.mlp.gate_proj",  # llama-hf refact
             "layers.{bid}.feed_forward.w1",  # llama-pth
             "transformer.h.{bid}.mlp.w2",  # qwen
@@ -247,17 +252,17 @@ class TensorNameMap:
             "transformer.h.{bid}.mlp.linear_1",  # refact
             "model.layers.{bid}.residual_mlp.w1",  # arctic
         ),
-        MODEL_TENSOR.FFN_GATE_EXP: (
+        GGUF_MODEL_TENSOR.FFN_GATE_EXP: (
             "layers.{bid}.feed_forward.experts.w1",  # mixtral (merged)
             "transformer.decoder_layer.{bid}.moe.linear",  # Grok (merged)
             "transformer.blocks.{bid}.ffn.experts.mlp.w1",  # dbrx
             "model.layers.{bid}.mlp.experts.gate_proj",  # qwen2moe (merged)
         ),
-        MODEL_TENSOR.FFN_GATE_SHEXP: (
+        GGUF_MODEL_TENSOR.FFN_GATE_SHEXP: (
             "model.layers.{bid}.mlp.shared_expert.gate_proj",  # qwen2moe
         ),
         # Feed-forward down
-        MODEL_TENSOR.FFN_DOWN: (
+        GGUF_MODEL_TENSOR.FFN_DOWN: (
             "gpt_neox.layers.{bid}.mlp.dense_4h_to_h",  # gptneox
             "transformer.h.{bid}.mlp.c_proj",  # gpt2 refact qwen
             "transformer.blocks.{bid}.ffn.down_proj",  # mpt
@@ -279,84 +284,88 @@ class TensorNameMap:
             "encoder.layer.{bid}.mlp.wo",  # jina-bert-v2
             "model.layers.{bid}.residual_mlp.w2",  # arctic
         ),
-        MODEL_TENSOR.FFN_DOWN_EXP: (
+        GGUF_MODEL_TENSOR.FFN_DOWN_EXP: (
             "layers.{bid}.feed_forward.experts.w2",  # mixtral (merged)
             "transformer.decoder_layer.{bid}.moe.linear_1",  # Grok (merged)
             "transformer.blocks.{bid}.ffn.experts.mlp.w2",  # dbrx
             "model.layers.{bid}.mlp.experts.down_proj",  # qwen2moe (merged)
         ),
-        MODEL_TENSOR.FFN_DOWN_SHEXP: (
+        GGUF_MODEL_TENSOR.FFN_DOWN_SHEXP: (
             "model.layers.{bid}.mlp.shared_expert.down_proj",  # qwen2moe
         ),
-        MODEL_TENSOR.ATTN_Q_NORM: (
+        GGUF_MODEL_TENSOR.ATTN_Q_NORM: (
             "language_model.encoder.layers.{bid}.self_attention.q_layernorm",
             "model.layers.{bid}.self_attn.q_layernorm",  # persimmon
             "model.layers.{bid}.self_attn.q_norm",  # cohere
             "transformer.blocks.{bid}.attn.q_ln",  # sea-lion
             "encoder.layer.{bid}.attention.self.layer_norm_q",  # jina-bert-v2
         ),
-        MODEL_TENSOR.ATTN_K_NORM: (
+        GGUF_MODEL_TENSOR.ATTN_K_NORM: (
             "language_model.encoder.layers.{bid}.self_attention.k_layernorm",
             "model.layers.{bid}.self_attn.k_layernorm",  # persimmon
             "model.layers.{bid}.self_attn.k_norm",  # cohere
             "transformer.blocks.{bid}.attn.k_ln",  # sea-lion
             "encoder.layer.{bid}.attention.self.layer_norm_k",  # jina-bert-v2
         ),
-        MODEL_TENSOR.ROPE_FREQS: (
+        GGUF_MODEL_TENSOR.ROPE_FREQS: (
             "language_model.encoder.layers.{bid}.self_attention.rotary_emb.inv_freq",  # persimmon
         ),
-        MODEL_TENSOR.LAYER_OUT_NORM: (
+        GGUF_MODEL_TENSOR.LAYER_OUT_NORM: (
             "encoder.layer.{bid}.output.LayerNorm",  # bert
             "encoder.layers.{bid}.norm2",  # nomic-bert
             "transformer.decoder_layer.{bid}.rms_norm_3",  # Grok
             "encoder.layer.{bid}.mlp.layernorm",  # jina-bert-v2
         ),
-        MODEL_TENSOR.SSM_IN: (
+        GGUF_MODEL_TENSOR.SSM_IN: (
             "model.layers.{bid}.in_proj",
             "backbone.layers.{bid}.mixer.in_proj",
         ),
-        MODEL_TENSOR.SSM_CONV1D: (
+        GGUF_MODEL_TENSOR.SSM_CONV1D: (
             "model.layers.{bid}.conv1d",
             "backbone.layers.{bid}.mixer.conv1d",
         ),
-        MODEL_TENSOR.SSM_X: (
+        GGUF_MODEL_TENSOR.SSM_X: (
             "model.layers.{bid}.x_proj",
             "backbone.layers.{bid}.mixer.x_proj",
         ),
-        MODEL_TENSOR.SSM_DT: (
+        GGUF_MODEL_TENSOR.SSM_DT: (
             "model.layers.{bid}.dt_proj",
             "backbone.layers.{bid}.mixer.dt_proj",
         ),
-        MODEL_TENSOR.SSM_A: (
+        GGUF_MODEL_TENSOR.SSM_A: (
             "model.layers.{bid}.A_log",
             "backbone.layers.{bid}.mixer.A_log",
         ),
-        MODEL_TENSOR.SSM_D: (
+        GGUF_MODEL_TENSOR.SSM_D: (
             "model.layers.{bid}.D",
             "backbone.layers.{bid}.mixer.D",
         ),
-        MODEL_TENSOR.SSM_OUT: (
+        GGUF_MODEL_TENSOR.SSM_OUT: (
             "model.layers.{bid}.out_proj",
             "backbone.layers.{bid}.mixer.out_proj",
         ),
     }
 
     # architecture-specific block mappings
-    arch_block_mappings_cfg: dict[MODEL_ARCH, dict[MODEL_TENSOR, tuple[str, ...]]] = {
-        MODEL_ARCH.ARCTIC: {
-            MODEL_TENSOR.FFN_NORM: ("model.layers.{bid}.residual_layernorm",),
-            MODEL_TENSOR.FFN_NORM_EXP: ("model.layers.{bid}.post_attention_layernorm",),
+    arch_block_mappings_cfg: dict[
+        GGUF_MODEL_ARCH, dict[GGUF_MODEL_TENSOR, tuple[str, ...]]
+    ] = {
+        GGUF_MODEL_ARCH.ARCTIC: {
+            GGUF_MODEL_TENSOR.FFN_NORM: ("model.layers.{bid}.residual_layernorm",),
+            GGUF_MODEL_TENSOR.FFN_NORM_EXP: (
+                "model.layers.{bid}.post_attention_layernorm",
+            ),
         },
     }
 
-    mapping: dict[str, tuple[MODEL_TENSOR, str]]
+    mapping: dict[str, tuple[GGUF_MODEL_TENSOR, str]]
 
-    def __init__(self, arch: MODEL_ARCH, n_blocks: int):
+    def __init__(self, arch: GGUF_MODEL_ARCH, n_blocks: int):
         self.mapping = {}
         for tensor, keys in self.mappings_cfg.items():
-            if tensor not in MODEL_TENSORS[arch]:
+            if tensor not in GGUF_MODEL_TENSORS[arch]:
                 continue
-            tensor_name = TENSOR_NAMES[tensor]
+            tensor_name = GGUF_TENSOR_NAMES[tensor]
             self.mapping[tensor_name] = (tensor, tensor_name)
             for key in keys:
                 self.mapping[key] = (tensor, tensor_name)
@@ -364,12 +373,12 @@ class TensorNameMap:
             self.block_mappings_cfg.update(self.arch_block_mappings_cfg[arch])
         for bid in range(n_blocks):
             for tensor, keys in self.block_mappings_cfg.items():
-                if tensor not in MODEL_TENSORS[arch]:
+                if tensor not in GGUF_MODEL_TENSORS[arch]:
                     continue
                 # TODO: make this configurable
                 n_experts = 128
                 for xid in range(n_experts):
-                    tensor_name = TENSOR_NAMES[tensor].format(bid=bid, xid=xid)
+                    tensor_name = GGUF_TENSOR_NAMES[tensor].format(bid=bid, xid=xid)
                     self.mapping[tensor_name] = (tensor, tensor_name)
                     for key in keys:
                         key = key.format(bid=bid, xid=xid)
@@ -377,7 +386,7 @@ class TensorNameMap:
 
     def get_type_and_name(
         self, key: str, try_suffixes: Sequence[str] = ()
-    ) -> tuple[MODEL_TENSOR, str] | None:
+    ) -> tuple[GGUF_MODEL_TENSOR, str] | None:
         result = self.mapping.get(key)
         if result is not None:
             return result
@@ -396,7 +405,7 @@ class TensorNameMap:
 
     def get_type(
         self, key: str, try_suffixes: Sequence[str] = ()
-    ) -> MODEL_TENSOR | None:
+    ) -> GGUF_MODEL_TENSOR | None:
         result = self.get_type_and_name(key, try_suffixes=try_suffixes)
         if result is None:
             return None
@@ -415,5 +424,5 @@ class TensorNameMap:
         return repr(self.mapping)
 
 
-def get_tensor_name_map(arch: MODEL_ARCH, n_blocks: int) -> TensorNameMap:
+def get_tensor_name_map(arch: GGUF_MODEL_ARCH, n_blocks: int) -> TensorNameMap:
     return TensorNameMap(arch, n_blocks)

@@ -22,11 +22,11 @@ if __name__ == "__main__":
     sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from .constants import (
-    GGML_QUANT_SIZES,
+    GGUF_QUANT_SIZES,
     GGUF_DEFAULT_ALIGNMENT,
     GGUF_MAGIC,
     GGUF_VERSION,
-    GGMLQuantizationType,
+    GGUFQuantizationType,
     GGUFValueType,
 )
 
@@ -56,7 +56,7 @@ class ReaderField(NamedTuple):
 
 class ReaderTensor(NamedTuple):
     name: str
-    tensor_type: GGMLQuantizationType
+    tensor_type: GGUFQuantizationType
     shape: npt.NDArray[np.uint32]
     n_elements: int
     n_bytes: int
@@ -290,32 +290,32 @@ class GGUFReader:
             if tensor_name in tensor_names:
                 raise ValueError(f"Found duplicated tensor with name {tensor_name}")
             tensor_names.add(tensor_name)
-            ggml_type = GGMLQuantizationType(raw_dtype[0])
+            ggml_type = GGUFQuantizationType(raw_dtype[0])
             n_elems = int(np.prod(dims))
             np_dims = tuple(reversed(dims.tolist()))
-            block_size, type_size = GGML_QUANT_SIZES[ggml_type]
+            block_size, type_size = GGUF_QUANT_SIZES[ggml_type]
             n_bytes = n_elems * type_size // block_size
             data_offs = int(start_offs + offset_tensor[0])
             item_type: npt.DTypeLike
-            if ggml_type == GGMLQuantizationType.F16:
+            if ggml_type == GGUFQuantizationType.F16:
                 item_count = n_elems
                 item_type = np.float16
-            elif ggml_type == GGMLQuantizationType.F32:
+            elif ggml_type == GGUFQuantizationType.F32:
                 item_count = n_elems
                 item_type = np.float32
-            elif ggml_type == GGMLQuantizationType.F64:
+            elif ggml_type == GGUFQuantizationType.F64:
                 item_count = n_elems
                 item_type = np.float64
-            elif ggml_type == GGMLQuantizationType.I8:
+            elif ggml_type == GGUFQuantizationType.I8:
                 item_count = n_elems
                 item_type = np.int8
-            elif ggml_type == GGMLQuantizationType.I16:
+            elif ggml_type == GGUFQuantizationType.I16:
                 item_count = n_elems
                 item_type = np.int16
-            elif ggml_type == GGMLQuantizationType.I32:
+            elif ggml_type == GGUFQuantizationType.I32:
                 item_count = n_elems
                 item_type = np.int32
-            elif ggml_type == GGMLQuantizationType.I64:
+            elif ggml_type == GGUFQuantizationType.I64:
                 item_count = n_elems
                 item_type = np.int64
             else:

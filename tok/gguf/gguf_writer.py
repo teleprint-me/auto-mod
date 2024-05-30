@@ -16,13 +16,13 @@ from .constants import (
     GGUF_DEFAULT_ALIGNMENT,
     GGUF_MAGIC,
     GGUF_VERSION,
-    GGMLQuantizationType,
+    GGUFQuantizationType,
     GGUFEndian,
     GGUFValueType,
-    Keys,
-    RopeScalingType,
-    PoolingType,
-    TokenType,
+    GGUFMetadataKeys,
+    GGUFRopeScalingType,
+    GGUFPoolingType,
+    ModelTokenType,
 )
 
 from .quants import quant_shape_from_byte_shape
@@ -215,7 +215,7 @@ class GGUFWriter:
         tensor_shape: Sequence[int],
         tensor_dtype: np.dtype,
         tensor_nbytes: int,
-        raw_dtype: GGMLQuantizationType | None = None,
+        raw_dtype: GGUFQuantizationType | None = None,
     ) -> None:
         if self.state is not WriterState.EMPTY:
             raise ValueError(f"Expected output file to be empty, got {self.state}")
@@ -229,19 +229,19 @@ class GGUFWriter:
         self.ti_data += encoded_name
         if raw_dtype is None:
             if tensor_dtype == np.float16:
-                dtype = GGMLQuantizationType.F16
+                dtype = GGUFQuantizationType.F16
             elif tensor_dtype == np.float32:
-                dtype = GGMLQuantizationType.F32
+                dtype = GGUFQuantizationType.F32
             elif tensor_dtype == np.float64:
-                dtype = GGMLQuantizationType.F64
+                dtype = GGUFQuantizationType.F64
             elif tensor_dtype == np.int8:
-                dtype = GGMLQuantizationType.I8
+                dtype = GGUFQuantizationType.I8
             elif tensor_dtype == np.int16:
-                dtype = GGMLQuantizationType.I16
+                dtype = GGUFQuantizationType.I16
             elif tensor_dtype == np.int32:
-                dtype = GGMLQuantizationType.I32
+                dtype = GGUFQuantizationType.I32
             elif tensor_dtype == np.int64:
-                dtype = GGMLQuantizationType.I64
+                dtype = GGUFQuantizationType.I64
             else:
                 raise ValueError(
                     "Only F16, F32, F64, I8, I16, I32, I64 tensors are supported for now"
@@ -264,7 +264,7 @@ class GGUFWriter:
         name: str,
         tensor: np.ndarray[Any, Any],
         raw_shape: Sequence[int] | None = None,
-        raw_dtype: GGMLQuantizationType | None = None,
+        raw_dtype: GGUFQuantizationType | None = None,
     ) -> None:
         if self.endianess == GGUFEndian.BIG:
             tensor.byteswap(inplace=True)
@@ -353,189 +353,235 @@ class GGUFWriter:
         self.fout.close()
 
     def add_architecture(self) -> None:
-        self.add_string(Keys.General.ARCHITECTURE, self.arch)
+        self.add_string(GGUFMetadataKeys.General.ARCHITECTURE, self.arch)
 
     def add_author(self, author: str) -> None:
-        self.add_string(Keys.General.AUTHOR, author)
+        self.add_string(GGUFMetadataKeys.General.AUTHOR, author)
 
     def add_version(self, version: str) -> None:
-        self.add_string(Keys.General.VERSION, version)
+        self.add_string(GGUFMetadataKeys.General.VERSION, version)
 
     def add_tensor_data_layout(self, layout: str) -> None:
-        self.add_string(Keys.LLM.TENSOR_DATA_LAYOUT.format(arch=self.arch), layout)
+        self.add_string(
+            GGUFMetadataKeys.LLM.TENSOR_DATA_LAYOUT.format(arch=self.arch), layout
+        )
 
     def add_url(self, url: str) -> None:
-        self.add_string(Keys.General.URL, url)
+        self.add_string(GGUFMetadataKeys.General.URL, url)
 
     def add_description(self, description: str) -> None:
-        self.add_string(Keys.General.DESCRIPTION, description)
+        self.add_string(GGUFMetadataKeys.General.DESCRIPTION, description)
 
     def add_licence(self, licence: str) -> None:
-        self.add_string(Keys.General.LICENSE, licence)
+        self.add_string(GGUFMetadataKeys.General.LICENSE, licence)
 
     def add_source_url(self, url: str) -> None:
-        self.add_string(Keys.General.SOURCE_URL, url)
+        self.add_string(GGUFMetadataKeys.General.SOURCE_URL, url)
 
     def add_source_hf_repo(self, repo: str) -> None:
-        self.add_string(Keys.General.SOURCE_HF_REPO, repo)
+        self.add_string(GGUFMetadataKeys.General.SOURCE_HF_REPO, repo)
 
     def add_file_type(self, ftype: int) -> None:
-        self.add_uint32(Keys.General.FILE_TYPE, ftype)
+        self.add_uint32(GGUFMetadataKeys.General.FILE_TYPE, ftype)
 
     def add_name(self, name: str) -> None:
-        self.add_string(Keys.General.NAME, name)
+        self.add_string(GGUFMetadataKeys.General.NAME, name)
 
     def add_quantization_version(self, quantization_version: int) -> None:
-        self.add_uint32(Keys.General.QUANTIZATION_VERSION, quantization_version)
+        self.add_uint32(
+            GGUFMetadataKeys.General.QUANTIZATION_VERSION, quantization_version
+        )
 
     def add_custom_alignment(self, alignment: int) -> None:
         self.data_alignment = alignment
-        self.add_uint32(Keys.General.ALIGNMENT, alignment)
+        self.add_uint32(GGUFMetadataKeys.General.ALIGNMENT, alignment)
 
     def add_vocab_size(self, size: int) -> None:
-        self.add_uint32(Keys.LLM.VOCAB_SIZE.format(arch=self.arch), size)
+        self.add_uint32(GGUFMetadataKeys.LLM.VOCAB_SIZE.format(arch=self.arch), size)
 
     def add_context_length(self, length: int) -> None:
-        self.add_uint32(Keys.LLM.CONTEXT_LENGTH.format(arch=self.arch), length)
+        self.add_uint32(
+            GGUFMetadataKeys.LLM.CONTEXT_LENGTH.format(arch=self.arch), length
+        )
 
     def add_embedding_length(self, length: int) -> None:
-        self.add_uint32(Keys.LLM.EMBEDDING_LENGTH.format(arch=self.arch), length)
+        self.add_uint32(
+            GGUFMetadataKeys.LLM.EMBEDDING_LENGTH.format(arch=self.arch), length
+        )
 
     def add_block_count(self, length: int) -> None:
-        self.add_uint32(Keys.LLM.BLOCK_COUNT.format(arch=self.arch), length)
+        self.add_uint32(GGUFMetadataKeys.LLM.BLOCK_COUNT.format(arch=self.arch), length)
 
     def add_feed_forward_length(self, length: int) -> None:
-        self.add_uint32(Keys.LLM.FEED_FORWARD_LENGTH.format(arch=self.arch), length)
+        self.add_uint32(
+            GGUFMetadataKeys.LLM.FEED_FORWARD_LENGTH.format(arch=self.arch), length
+        )
 
     def add_parallel_residual(self, use: bool) -> None:
-        self.add_bool(Keys.LLM.USE_PARALLEL_RESIDUAL.format(arch=self.arch), use)
+        self.add_bool(
+            GGUFMetadataKeys.LLM.USE_PARALLEL_RESIDUAL.format(arch=self.arch), use
+        )
 
     def add_head_count(self, count: int) -> None:
-        self.add_uint32(Keys.Attention.HEAD_COUNT.format(arch=self.arch), count)
+        self.add_uint32(
+            GGUFMetadataKeys.Attention.HEAD_COUNT.format(arch=self.arch), count
+        )
 
     def add_head_count_kv(self, count: int) -> None:
-        self.add_uint32(Keys.Attention.HEAD_COUNT_KV.format(arch=self.arch), count)
+        self.add_uint32(
+            GGUFMetadataKeys.Attention.HEAD_COUNT_KV.format(arch=self.arch), count
+        )
 
     def add_key_length(self, length: int) -> None:
-        self.add_uint32(Keys.Attention.KEY_LENGTH.format(arch=self.arch), length)
+        self.add_uint32(
+            GGUFMetadataKeys.Attention.KEY_LENGTH.format(arch=self.arch), length
+        )
 
     def add_value_length(self, length: int) -> None:
-        self.add_uint32(Keys.Attention.VALUE_LENGTH.format(arch=self.arch), length)
+        self.add_uint32(
+            GGUFMetadataKeys.Attention.VALUE_LENGTH.format(arch=self.arch), length
+        )
 
     def add_max_alibi_bias(self, bias: float) -> None:
-        self.add_float32(Keys.Attention.MAX_ALIBI_BIAS.format(arch=self.arch), bias)
+        self.add_float32(
+            GGUFMetadataKeys.Attention.MAX_ALIBI_BIAS.format(arch=self.arch), bias
+        )
 
     def add_clamp_kqv(self, value: float) -> None:
-        self.add_float32(Keys.Attention.CLAMP_KQV.format(arch=self.arch), value)
+        self.add_float32(
+            GGUFMetadataKeys.Attention.CLAMP_KQV.format(arch=self.arch), value
+        )
 
     def add_logit_scale(self, value: float) -> None:
-        self.add_float32(Keys.LLM.LOGIT_SCALE.format(arch=self.arch), value)
+        self.add_float32(GGUFMetadataKeys.LLM.LOGIT_SCALE.format(arch=self.arch), value)
 
     def add_expert_count(self, count: int) -> None:
-        self.add_uint32(Keys.LLM.EXPERT_COUNT.format(arch=self.arch), count)
+        self.add_uint32(GGUFMetadataKeys.LLM.EXPERT_COUNT.format(arch=self.arch), count)
 
     def add_expert_used_count(self, count: int) -> None:
-        self.add_uint32(Keys.LLM.EXPERT_USED_COUNT.format(arch=self.arch), count)
+        self.add_uint32(
+            GGUFMetadataKeys.LLM.EXPERT_USED_COUNT.format(arch=self.arch), count
+        )
 
     def add_layer_norm_eps(self, value: float) -> None:
-        self.add_float32(Keys.Attention.LAYERNORM_EPS.format(arch=self.arch), value)
+        self.add_float32(
+            GGUFMetadataKeys.Attention.LAYERNORM_EPS.format(arch=self.arch), value
+        )
 
     def add_layer_norm_rms_eps(self, value: float) -> None:
-        self.add_float32(Keys.Attention.LAYERNORM_RMS_EPS.format(arch=self.arch), value)
+        self.add_float32(
+            GGUFMetadataKeys.Attention.LAYERNORM_RMS_EPS.format(arch=self.arch), value
+        )
 
     def add_causal_attention(self, value: bool) -> None:
-        self.add_bool(Keys.Attention.CAUSAL.format(arch=self.arch), value)
+        self.add_bool(GGUFMetadataKeys.Attention.CAUSAL.format(arch=self.arch), value)
 
-    def add_pooling_type(self, value: PoolingType) -> None:
-        self.add_uint32(Keys.LLM.POOLING_TYPE.format(arch=self.arch), value.value)
+    def add_pooling_type(self, value: GGUFPoolingType) -> None:
+        self.add_uint32(
+            GGUFMetadataKeys.LLM.POOLING_TYPE.format(arch=self.arch), value.value
+        )
 
     def add_rope_dimension_count(self, count: int) -> None:
-        self.add_uint32(Keys.Rope.DIMENSION_COUNT.format(arch=self.arch), count)
+        self.add_uint32(
+            GGUFMetadataKeys.Rope.DIMENSION_COUNT.format(arch=self.arch), count
+        )
 
     def add_rope_freq_base(self, value: float) -> None:
-        self.add_float32(Keys.Rope.FREQ_BASE.format(arch=self.arch), value)
+        self.add_float32(GGUFMetadataKeys.Rope.FREQ_BASE.format(arch=self.arch), value)
 
-    def add_rope_scaling_type(self, value: RopeScalingType) -> None:
-        self.add_string(Keys.Rope.SCALING_TYPE.format(arch=self.arch), value.value)
+    def add_rope_scaling_type(self, value: GGUFRopeScalingType) -> None:
+        self.add_string(
+            GGUFMetadataKeys.Rope.SCALING_TYPE.format(arch=self.arch), value.value
+        )
 
     def add_rope_scaling_factor(self, value: float) -> None:
-        self.add_float32(Keys.Rope.SCALING_FACTOR.format(arch=self.arch), value)
+        self.add_float32(
+            GGUFMetadataKeys.Rope.SCALING_FACTOR.format(arch=self.arch), value
+        )
 
     def add_rope_scaling_attn_factors(self, value: Sequence[float]) -> None:
-        self.add_float32(Keys.Rope.SCALING_ATTN_FACTOR.format(arch=self.arch), value)
+        self.add_float32(
+            GGUFMetadataKeys.Rope.SCALING_ATTN_FACTOR.format(arch=self.arch), value
+        )
 
     def add_rope_scaling_orig_ctx_len(self, value: int) -> None:
-        self.add_uint32(Keys.Rope.SCALING_ORIG_CTX_LEN.format(arch=self.arch), value)
+        self.add_uint32(
+            GGUFMetadataKeys.Rope.SCALING_ORIG_CTX_LEN.format(arch=self.arch), value
+        )
 
     def add_rope_scaling_finetuned(self, value: bool) -> None:
-        self.add_bool(Keys.Rope.SCALING_FINETUNED.format(arch=self.arch), value)
+        self.add_bool(
+            GGUFMetadataKeys.Rope.SCALING_FINETUNED.format(arch=self.arch), value
+        )
 
     def add_ssm_conv_kernel(self, value: int) -> None:
-        self.add_uint32(Keys.SSM.CONV_KERNEL.format(arch=self.arch), value)
+        self.add_uint32(GGUFMetadataKeys.SSM.CONV_KERNEL.format(arch=self.arch), value)
 
     def add_ssm_inner_size(self, value: int) -> None:
-        self.add_uint32(Keys.SSM.INNER_SIZE.format(arch=self.arch), value)
+        self.add_uint32(GGUFMetadataKeys.SSM.INNER_SIZE.format(arch=self.arch), value)
 
     def add_ssm_state_size(self, value: int) -> None:
-        self.add_uint32(Keys.SSM.STATE_SIZE.format(arch=self.arch), value)
+        self.add_uint32(GGUFMetadataKeys.SSM.STATE_SIZE.format(arch=self.arch), value)
 
     def add_ssm_time_step_rank(self, value: int) -> None:
-        self.add_uint32(Keys.SSM.TIME_STEP_RANK.format(arch=self.arch), value)
+        self.add_uint32(
+            GGUFMetadataKeys.SSM.TIME_STEP_RANK.format(arch=self.arch), value
+        )
 
     def add_tokenizer_model(self, model: str) -> None:
-        self.add_string(Keys.Tokenizer.MODEL, model)
+        self.add_string(GGUFMetadataKeys.Tokenizer.MODEL, model)
 
     def add_tokenizer_pre(self, pre: str) -> None:
-        self.add_string(Keys.Tokenizer.PRE, pre)
+        self.add_string(GGUFMetadataKeys.Tokenizer.PRE, pre)
 
     def add_token_list(
         self, tokens: Sequence[str] | Sequence[bytes] | Sequence[bytearray]
     ) -> None:
-        self.add_array(Keys.Tokenizer.LIST, tokens)
+        self.add_array(GGUFMetadataKeys.Tokenizer.LIST, tokens)
 
     def add_token_merges(
         self, merges: Sequence[str] | Sequence[bytes] | Sequence[bytearray]
     ) -> None:
-        self.add_array(Keys.Tokenizer.MERGES, merges)
+        self.add_array(GGUFMetadataKeys.Tokenizer.MERGES, merges)
 
-    def add_token_types(self, types: Sequence[TokenType] | Sequence[int]) -> None:
-        self.add_array(Keys.Tokenizer.TOKEN_TYPE, types)
+    def add_token_types(self, types: Sequence[ModelTokenType] | Sequence[int]) -> None:
+        self.add_array(GGUFMetadataKeys.Tokenizer.TOKEN_TYPE, types)
 
     def add_token_type_count(self, value: int) -> None:
-        self.add_uint32(Keys.Tokenizer.TOKEN_TYPE_COUNT, value)
+        self.add_uint32(GGUFMetadataKeys.Tokenizer.TOKEN_TYPE_COUNT, value)
 
     def add_token_scores(self, scores: Sequence[float]) -> None:
-        self.add_array(Keys.Tokenizer.SCORES, scores)
+        self.add_array(GGUFMetadataKeys.Tokenizer.SCORES, scores)
 
     def add_bos_token_id(self, id: int) -> None:
-        self.add_uint32(Keys.Tokenizer.BOS_ID, id)
+        self.add_uint32(GGUFMetadataKeys.Tokenizer.BOS_ID, id)
 
     def add_eos_token_id(self, id: int) -> None:
-        self.add_uint32(Keys.Tokenizer.EOS_ID, id)
+        self.add_uint32(GGUFMetadataKeys.Tokenizer.EOS_ID, id)
 
     def add_unk_token_id(self, id: int) -> None:
-        self.add_uint32(Keys.Tokenizer.UNK_ID, id)
+        self.add_uint32(GGUFMetadataKeys.Tokenizer.UNK_ID, id)
 
     def add_sep_token_id(self, id: int) -> None:
-        self.add_uint32(Keys.Tokenizer.SEP_ID, id)
+        self.add_uint32(GGUFMetadataKeys.Tokenizer.SEP_ID, id)
 
     def add_pad_token_id(self, id: int) -> None:
-        self.add_uint32(Keys.Tokenizer.PAD_ID, id)
+        self.add_uint32(GGUFMetadataKeys.Tokenizer.PAD_ID, id)
 
     def add_cls_token_id(self, id: int) -> None:
-        self.add_uint32(Keys.Tokenizer.CLS_ID, id)
+        self.add_uint32(GGUFMetadataKeys.Tokenizer.CLS_ID, id)
 
     def add_mask_token_id(self, id: int) -> None:
-        self.add_uint32(Keys.Tokenizer.MASK_ID, id)
+        self.add_uint32(GGUFMetadataKeys.Tokenizer.MASK_ID, id)
 
     def add_add_bos_token(self, value: bool) -> None:
-        self.add_bool(Keys.Tokenizer.ADD_BOS, value)
+        self.add_bool(GGUFMetadataKeys.Tokenizer.ADD_BOS, value)
 
     def add_add_eos_token(self, value: bool) -> None:
-        self.add_bool(Keys.Tokenizer.ADD_EOS, value)
+        self.add_bool(GGUFMetadataKeys.Tokenizer.ADD_EOS, value)
 
     def add_add_space_prefix(self, value: bool) -> None:
-        self.add_bool(Keys.Tokenizer.ADD_PREFIX, value)
+        self.add_bool(GGUFMetadataKeys.Tokenizer.ADD_PREFIX, value)
 
     def add_chat_template(self, value: str | Sequence[Mapping[str, str]]) -> None:
         if not isinstance(value, str):
@@ -557,30 +603,35 @@ class GGUFWriter:
                     else:
                         template_names.add(name)
                         self.add_string(
-                            Keys.Tokenizer.CHAT_TEMPLATE_N.format(name=name), template
+                            GGUFMetadataKeys.Tokenizer.CHAT_TEMPLATE_N.format(
+                                name=name
+                            ),
+                            template,
                         )
 
             if template_names:
-                self.add_array(Keys.Tokenizer.CHAT_TEMPLATES, list(template_names))
+                self.add_array(
+                    GGUFMetadataKeys.Tokenizer.CHAT_TEMPLATES, list(template_names)
+                )
 
             if template_default is None:
                 return
 
             value = template_default
 
-        self.add_string(Keys.Tokenizer.CHAT_TEMPLATE, value)
+        self.add_string(GGUFMetadataKeys.Tokenizer.CHAT_TEMPLATE, value)
 
     def add_prefix_token_id(self, id: int) -> None:
-        self.add_uint32(Keys.Tokenizer.PREFIX_ID, id)
+        self.add_uint32(GGUFMetadataKeys.Tokenizer.PREFIX_ID, id)
 
     def add_suffix_token_id(self, id: int) -> None:
-        self.add_uint32(Keys.Tokenizer.SUFFIX_ID, id)
+        self.add_uint32(GGUFMetadataKeys.Tokenizer.SUFFIX_ID, id)
 
     def add_middle_token_id(self, id: int) -> None:
-        self.add_uint32(Keys.Tokenizer.MIDDLE_ID, id)
+        self.add_uint32(GGUFMetadataKeys.Tokenizer.MIDDLE_ID, id)
 
     def add_eot_token_id(self, id: int) -> None:
-        self.add_uint32(Keys.Tokenizer.EOT_ID, id)
+        self.add_uint32(GGUFMetadataKeys.Tokenizer.EOT_ID, id)
 
     def _pack(self, fmt: str, value: Any, skip_pack_prefix: bool = False) -> bytes:
         pack_prefix = ""

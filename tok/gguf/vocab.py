@@ -16,7 +16,7 @@ from typing import (
     runtime_checkable,
 )
 
-from .constants import TokenType
+from .constants import ModelTokenType
 from .gguf_writer import GGUFWriter
 from sentencepiece import SentencePieceProcessor
 
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 @runtime_checkable
-class Vocab(Protocol):
+class GGUFVocab(Protocol):
     tokenizer_model: ClassVar[str] = "no_vocab"
     name: ClassVar[str] = "no_vocab"
     vocab_size: int
@@ -42,13 +42,13 @@ class Vocab(Protocol):
     def __repr__(self) -> str:
         return "<NoVocab for a model without integrated vocabulary>"
 
-    def all_tokens(self) -> Iterable[tuple[bytes, float, TokenType]]:
+    def all_tokens(self) -> Iterable[tuple[bytes, float, ModelTokenType]]:
         class_name = self.__class__.__name__
         error_msg = f"Called undefined '{class_name}.all_tokens' method definition"
         raise NotImplementedError(error_msg)
 
 
-class SpecialVocab(Vocab):
+class GGUFSpecialVocab(GGUFVocab):
     def __init__(
         self,
         path: str | os.PathLike[str],
@@ -77,7 +77,7 @@ class SpecialVocab(Vocab):
         self._load(Path(path))
 
     def __repr__(self) -> str:
-        return "<SpecialVocab with {} merges, special tokens {}, add special tokens {}>".format(
+        return "<GGUFSpecialVocab with {} merges, special tokens {}, add special tokens {}>".format(
             len(self.merges),
             self.special_token_ids or "unset",
             self.add_special_token or "unset",
@@ -229,7 +229,7 @@ class SpecialVocab(Vocab):
         return True
 
 
-class BpeVocab(Vocab):
+class GGUFBPEVocab(GGUFVocab):
     tokenizer_model = "gpt2"
     name = "bpe"
 
@@ -290,26 +290,26 @@ class BpeVocab(Vocab):
         self.vocab_size = self.vocab_size_base + len(self.added_tokens_list)
         self.fname_tokenizer = fname_tokenizer
 
-    def bpe_tokens(self) -> Iterable[tuple[bytes, float, TokenType]]:
+    def bpe_tokens(self) -> Iterable[tuple[bytes, float, ModelTokenType]]:
         reverse_vocab = {id: encoded_tok for encoded_tok, id in self.vocab.items()}
 
         for i, _ in enumerate(self.vocab):
-            yield reverse_vocab[i], 0.0, TokenType.NORMAL
+            yield reverse_vocab[i], 0.0, ModelTokenType.NORMAL
 
-    def added_tokens(self) -> Iterable[tuple[bytes, float, TokenType]]:
+    def added_tokens(self) -> Iterable[tuple[bytes, float, ModelTokenType]]:
         for text in self.added_tokens_list:
             score = -1000.0
-            yield text.encode("utf-8"), score, TokenType.CONTROL
+            yield text.encode("utf-8"), score, ModelTokenType.CONTROL
 
-    def all_tokens(self) -> Iterable[tuple[bytes, float, TokenType]]:
+    def all_tokens(self) -> Iterable[tuple[bytes, float, ModelTokenType]]:
         yield from self.bpe_tokens()
         yield from self.added_tokens()
 
     def __repr__(self) -> str:
-        return f"<BpeVocab with {self.vocab_size_base} base tokens and {len(self.added_tokens_list)} added tokens>"
+        return f"<GGUFBPEVocab with {self.vocab_size_base} base tokens and {len(self.added_tokens_list)} added tokens>"
 
 
-class SentencePieceVocab(Vocab):
+class SentencePieceVocab(GGUFVocab):
     tokenizer_model = "llama"
     name = "spm"
 
@@ -348,36 +348,36 @@ class SentencePieceVocab(Vocab):
         self.vocab_size = self.vocab_size_base + len(self.added_tokens_list)
         self.fname_tokenizer = fname_tokenizer
 
-    def sentencepiece_tokens(self) -> Iterable[tuple[bytes, float, TokenType]]:
+    def sentencepiece_tokens(self) -> Iterable[tuple[bytes, float, ModelTokenType]]:
         tokenizer = self.sentencepiece_tokenizer
         for i in range(tokenizer.vocab_size()):
             piece = tokenizer.IdToPiece(i)
             text = piece.encode("utf-8")
             score: float = tokenizer.GetScore(i)
 
-            toktype = TokenType.NORMAL
+            toktype = ModelTokenType.NORMAL
             if tokenizer.IsUnknown(i):
-                toktype = TokenType.UNKNOWN
+                toktype = ModelTokenType.UNKNOWN
             if tokenizer.IsControl(i):
-                toktype = TokenType.CONTROL
+                toktype = ModelTokenType.CONTROL
 
             # NOTE: I think added_tokens are user defined.
             # ref: https://github.com/google/sentencepiece/blob/master/src/sentencepiece_model.proto
-            # if tokenizer.is_user_defined(i): toktype = TokenType.USER_DEFINED
+            # if tokenizer.is_user_defined(i): toktype = ModelTokenType.USER_DEFINED
 
             if tokenizer.IsUnused(i):
-                toktype = TokenType.UNUSED
+                toktype = ModelTokenType.UNUSED
             if tokenizer.IsByte(i):
-                toktype = TokenType.BYTE
+                toktype = ModelTokenType.BYTE
 
             yield text, score, toktype
 
-    def added_tokens(self) -> Iterable[tuple[bytes, float, TokenType]]:
+    def added_tokens(self) -> Iterable[tuple[bytes, float, ModelTokenType]]:
         for text in self.added_tokens_list:
             score = -1000.0
-            yield text.encode("utf-8"), score, TokenType.USER_DEFINED
+            yield text.encode("utf-8"), score, ModelTokenType.USER_DEFINED
 
-    def all_tokens(self) -> Iterable[tuple[bytes, float, TokenType]]:
+    def all_tokens(self) -> Iterable[tuple[bytes, float, ModelTokenType]]:
         yield from self.sentencepiece_tokens()
         yield from self.added_tokens()
 
@@ -385,7 +385,7 @@ class SentencePieceVocab(Vocab):
         return f"<SentencePieceVocab with {self.vocab_size_base} base tokens and {len(self.added_tokens_list)} added tokens>"
 
 
-class LlamaHfVocab(Vocab):
+class LlamaHfVocab(GGUFVocab):
     tokenizer_model = "llama"
     name = "hfft"
 
@@ -403,7 +403,7 @@ class LlamaHfVocab(Vocab):
             and not tokenizer_model.get("byte_fallback", True)
         )
         if is_llama3:
-            raise TypeError("Llama 3 must be converted with BpeVocab")
+            raise TypeError("Llama 3 must be converted with GGUFBPEVocab")
 
         if not is_llama3 and (
             tokenizer_model["type"] != "BPE"
@@ -457,7 +457,7 @@ class LlamaHfVocab(Vocab):
 
         self.fname_tokenizer = fname_tokenizer
 
-    def hf_tokens(self) -> Iterable[tuple[bytes, float, TokenType]]:
+    def hf_tokens(self) -> Iterable[tuple[bytes, float, ModelTokenType]]:
         reverse_vocab = {
             id: encoded_tok for encoded_tok, id in self.tokenizer.get_vocab().items()
         }
@@ -479,20 +479,22 @@ class LlamaHfVocab(Vocab):
 
     def get_token_type(
         self, token_id: int, token_text: bytes, special_ids: set[int]
-    ) -> TokenType:
+    ) -> ModelTokenType:
         # Special case for byte tokens
         if re.fullmatch(rb"<0x[0-9A-Fa-f]{2}>", token_text):
-            return TokenType.BYTE
+            return ModelTokenType.BYTE
 
         # Determine token type based on whether it's a special token
-        return TokenType.CONTROL if token_id in special_ids else TokenType.NORMAL
+        return (
+            ModelTokenType.CONTROL if token_id in special_ids else ModelTokenType.NORMAL
+        )
 
     def get_token_score(self, token_id: int) -> float:
         # Placeholder for actual logic to determine the token's score
         # This needs to be implemented based on specific requirements
         return -1000.0  # Default score
 
-    def added_tokens(self) -> Iterable[tuple[bytes, float, TokenType]]:
+    def added_tokens(self) -> Iterable[tuple[bytes, float, ModelTokenType]]:
         for text in self.added_tokens_list:
             if text in self.specials:
                 toktype = self.get_token_type(
@@ -500,7 +502,7 @@ class LlamaHfVocab(Vocab):
                 )
                 score = self.get_token_score(self.specials[text])
             else:
-                toktype = TokenType.USER_DEFINED
+                toktype = ModelTokenType.USER_DEFINED
                 score = -1000.0
 
             yield text.encode("utf-8"), score, toktype
@@ -508,7 +510,7 @@ class LlamaHfVocab(Vocab):
     def has_newline_token(self):
         return "<0x0A>" in self.tokenizer.vocab or "\n" in self.tokenizer.vocab
 
-    def all_tokens(self) -> Iterable[tuple[bytes, float, TokenType]]:
+    def all_tokens(self) -> Iterable[tuple[bytes, float, ModelTokenType]]:
         yield from self.hf_tokens()
         yield from self.added_tokens()
 

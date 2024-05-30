@@ -9,13 +9,12 @@ from huggingface_hub import login, model_info
 from sentencepiece import SentencePieceProcessor
 
 from .constants import (
-    GPT_PRE_TOKENIZER_DEFAULT,
-    HF_TOKENIZER_BPE_FILES,
-    HF_TOKENIZER_SPM_FILES,
+    MODEL_TOKENIZER_BPE_FILES,
+    MODEL_TOKENIZER_SPM_FILES,
     ModelFileExtension,
-    NormalizerType,
-    PreTokenizerType,
-    VocabType,
+    ModelNormalizerType,
+    ModelPreTokenizerType,
+    ModelTokenizerType,
 )
 
 
@@ -119,15 +118,11 @@ class HFHubTokenizer(HFHubBase):
         super().__init__(model_path, logger)
 
     @staticmethod
-    def list_vocab_files(vocab_type: VocabType) -> tuple[str]:
-        if vocab_type == VocabType.SPM.value:
-            return HF_TOKENIZER_SPM_FILES
+    def list_vocab_files(vocab_type: ModelTokenizerType) -> tuple[str]:
+        if vocab_type == ModelTokenizerType.SPM.value:
+            return MODEL_TOKENIZER_SPM_FILES
         # NOTE: WPM and BPE are equivalent
-        return HF_TOKENIZER_BPE_FILES
-
-    @property
-    def default_pre_tokenizer(self) -> tuple[str, ...]:
-        return GPT_PRE_TOKENIZER_DEFAULT
+        return MODEL_TOKENIZER_BPE_FILES
 
     def config(self, model_repo: str) -> dict[str, object]:
         path = self.model_path / model_repo / "config.json"
@@ -259,7 +254,9 @@ class HFHubModel(HFHubBase):
         )
         self._request_listed_files(model_repo, filtered_files)
 
-    def download_all_vocab_files(self, model_repo: str, vocab_type: VocabType) -> None:
+    def download_all_vocab_files(
+        self, model_repo: str, vocab_type: ModelTokenizerType
+    ) -> None:
         vocab_files = self.tokenizer.list_vocab_files(vocab_type)
         self._request_listed_files(model_repo, vocab_files)
 
