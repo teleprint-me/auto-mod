@@ -70,16 +70,16 @@ class GGUFMetadataKeys:
         TIME_STEP_RANK = "{arch}.ssm.time_step_rank"
 
     class Tokenizer:
-        MODEL = "tokenizer.model"  # Model arch, e.g. llama
-        TYPE = "tokenizer.type"  # BPE, SPM, WPM, etc.
-        NORM = "tokenizer.norm"  # Normalizer object
-        PRE = "tokenizer.pre"  # Pre-tokenizer object
-        ADDED = "tokenizer.added"  # Added tokens list
-        VOCAB = "tokenizer.vocab"
-        TOKEN_TYPE = "tokenizer.token_type"
+        MODEL = "tokenizer.model"  # STRING: e.g. llama, gpt2, etc...
+        TYPE = "tokenizer.type"  # STRING: BPE, SPM, WPM, etc.
+        NORM = "tokenizer.norm"  # OBJECT {"type": "ByteLevel", ...}
+        PRE = "tokenizer.pre"  # OBJECT {"type": "ByteLevel", ...}
+        ADDED = "tokenizer.added"  # ARRAY of OBJECTs: [{"id": 1, ...}, ...]
+        VOCAB = "tokenizer.vocab"  # ARRAY of STRINGs: ["[BOS]", ...]
+        MERGES = "tokenizer.merges"  # ARRAY of STRINGs: ["▁ t", ...]
+        TOKEN_TYPE = "tokenizer.token_type"  # ARRAY of INT [2, ...]
         TOKEN_TYPE_COUNT = "tokenizer.token_type_count"  # BERT token types
         SCORES = "tokenizer.scores"
-        MERGES = "tokenizer.merges"
         BOS_ID = "tokenizer.bos_token_id"
         EOS_ID = "tokenizer.eos_token_id"
         UNK_ID = "tokenizer.unknown_token_id"
