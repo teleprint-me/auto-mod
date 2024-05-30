@@ -72,15 +72,13 @@ void gguf_print_backtrace(void) {
  *
  *   GGUF_ASSERT(5 == size)
  */
-#define GGUF_ASSERT(x)                                                           \
-    do {                                                                         \
-        if (!(x)) {                                                              \
-            fflush(stdout);                                                      \
-            fprintf(stderr, "GGUF_ASSERT: %s:%d: %s\n", __FILE__, __LINE__, #x); \
-            gguf_print_backtrace();                                              \
-            abort();                                                             \
-        }                                                                        \
-    } while (0)
+#define GGUF_ASSERT(x)                                                       \
+    if (!(x)) {                                                              \
+        fflush(stdout);                                                      \
+        fprintf(stderr, "GGUF_ASSERT: %s:%d: %s\n", __FILE__, __LINE__, #x); \
+        gguf_print_backtrace();                                              \
+        abort();                                                             \
+    }
 
 /**
  * @brief A custom implementation of std::format for backward compatibility.
