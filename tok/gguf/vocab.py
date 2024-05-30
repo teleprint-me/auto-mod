@@ -17,7 +17,7 @@ from typing import (
 )
 
 from .constants import ModelTokenType
-from .gguf_writer import GGUFWriter
+from .writer import GGUFWriter
 from sentencepiece import SentencePieceProcessor
 
 logger = logging.getLogger(__name__)

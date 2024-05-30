@@ -42,8 +42,8 @@ from ..constants import (
     ModelTokenType,
     ModelTokenizerType,
 )
-from ..gguf_reader import GGUFReader
-from ..gguf_writer import GGUFWriter
+from ..reader import GGUFReader
+from ..writer import GGUFWriter
 from ..lazy import LazyBase, LazyNumpyTensor
 from ..quants import (
     can_quantize_to_q8_0,

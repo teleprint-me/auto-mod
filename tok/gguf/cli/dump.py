@@ -17,7 +17,7 @@ if (
 ):
     sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from ..gguf_reader import GGUFReader
+from ..reader import GGUFReader
 from ..constants import GGUFValueType
 
 logger = logging.getLogger("gguf-dump")
