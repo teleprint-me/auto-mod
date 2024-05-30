@@ -96,7 +96,7 @@ enum llm_arch {
     LLM_ARCH_UNKNOWN,
 };
 
-static const std::map<llm_arch, const char*> LLM_ARCH_NAMES = {
+static std::map<llm_arch, std::string> LLM_ARCH_NAMES = {
     {LLM_ARCH_LLAMA, "llama"},
     {LLM_ARCH_FALCON, "falcon"},
     {LLM_ARCH_GROK, "grok"},
@@ -222,7 +222,7 @@ enum llm_kv {
     LLM_KV_TOKENIZER_EOT_ID,
 };
 
-static const std::map<llm_kv, const char*> LLM_KV_NAMES = {
+static std::map<llm_kv, std::string> LLM_KV_NAMES = {
     {LLM_KV_GENERAL_ARCHITECTURE, "general.architecture"},
     {LLM_KV_GENERAL_QUANTIZATION_VERSION, "general.quantization_version"},
     {LLM_KV_GENERAL_ALIGNMENT, "general.alignment"},
@@ -310,14 +310,26 @@ static const std::map<llm_kv, const char*> LLM_KV_NAMES = {
     {LLM_KV_TOKENIZER_EOT_ID, "tokenizer.eot_token_id"},
 };
 
+std::string getName(llm_kv kv) {
+    return LLM_KV_NAMES.at(kv);
+}
+
+std::string getArchName(llm_arch arch) {
+    return LLM_ARCH_NAMES.at(arch);
+}
+
 struct LLM_KV {
     LLM_KV(llm_arch arch) : arch(arch) {}
 
     llm_arch arch;
 
-    std::string operator()(llm_kv kv) const {
-        return std::format(LLM_KV_NAMES.at(kv), LLM_ARCH_NAMES.at(arch));
+    std::string operator()(llm_kv kv) {
+        return std::format("{} ({})", getName(kv), getArchName(arch));
     }
+
+  private:
+    static std::map<llm_kv, std::string>   LLM_KV_NAMES;
+    static std::map<llm_arch, std::string> LLM_ARCH_NAMES;
 };
 
 enum gguf_vocab_type {
