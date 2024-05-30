@@ -298,14 +298,6 @@ static const std::map<llm_kv, const std::string> LLM_KV_NAMES = {
     {LLM_KV_TOKENIZER_EOT_ID, "tokenizer.eot_token_id"},
 };
 
-const std::string getName(llm_kv kv) {
-    return LLM_KV_NAMES.at(kv);
-}
-
-const std::string getArchName(llm_arch arch) {
-    return LLM_ARCH_NAMES.at(arch);
-}
-
 struct LLM_KV {
   public:
     LLM_KV(llm_arch arch) : arch(arch) {}
@@ -313,7 +305,15 @@ struct LLM_KV {
     llm_arch arch;
 
     const std::string operator()(llm_kv kv) {
-        return std::format("{} ({})", LLM_KV_NAMES.at(kv), LLM_ARCH_NAMES.at(arch));
+        return std::format("{} ({})", getName(kv), getArchName(arch));
+    }
+
+    const std::string getName(llm_kv kv) {
+        return LLM_KV_NAMES.at(kv);
+    }
+
+    const std::string getArchName(llm_arch arch) {
+        return LLM_ARCH_NAMES.at(arch);
     }
 };
 
