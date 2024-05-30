@@ -79,7 +79,7 @@ class GGUFMetadataKeys:
         MERGES = "tokenizer.merges"  # ARRAY of STRINGs: ["▁ t", ...]
         TOKEN_TYPE = "tokenizer.token_type"  # ARRAY of INT [2, ...]
         TOKEN_TYPE_COUNT = "tokenizer.token_type_count"  # BERT token types
-        SCORES = "tokenizer.scores"
+        SCORES = "tokenizer.scores"  # WPM only
         BOS_ID = "tokenizer.bos_token_id"
         EOS_ID = "tokenizer.eos_token_id"
         UNK_ID = "tokenizer.unknown_token_id"
@@ -897,19 +897,20 @@ class GGUFEndian(IntEnum):
 
 
 class GGUFValueType(IntEnum):
-    UINT8 = 0
-    INT8 = 1
-    UINT16 = 2
-    INT16 = 3
-    UINT32 = 4
-    INT32 = 5
-    FLOAT32 = 6
-    BOOL = 7
-    STRING = 8
-    ARRAY = 9
-    UINT64 = 10
-    INT64 = 11
-    FLOAT64 = 12
+    UINT8 = auto()
+    INT8 = auto()
+    UINT16 = auto()
+    INT16 = auto()
+    UINT32 = auto()
+    INT32 = auto()
+    UINT64 = auto()
+    INT64 = auto()
+    FLOAT32 = auto()
+    FLOAT64 = auto()
+    BOOL = auto()
+    STRING = auto()
+    ARRAY = auto()
+    OBJECT = auto()
 
     @staticmethod
     def get_type(val: Any) -> GGUFValueType:
