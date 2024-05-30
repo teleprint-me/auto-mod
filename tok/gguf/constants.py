@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from enum import Enum, IntEnum, auto
 from typing import Any
+import sys
 
 #
 # constants
@@ -916,15 +917,30 @@ class GGUFValueType(IntEnum):
     def get_type(val: Any) -> GGUFValueType:
         if isinstance(val, (str, bytes, bytearray)):
             return GGUFValueType.STRING
-        elif isinstance(val, list):
-            return GGUFValueType.ARRAY
-        elif isinstance(val, float):
-            return GGUFValueType.FLOAT32
+
         elif isinstance(val, bool):
             return GGUFValueType.BOOL
-        elif isinstance(val, int):
+
+        # TODO: Need help with 64-bit types in Python.
+        # NOTE: Maybe use numpy, e.g. np.dtypes to determine data type?
+        # Using base types is unreliable in python as all numbers in python are 64-bits.
+        # This is a non-trivial problem and will require a "clever" procedure.
+
+        # If it's an integer (either signed or unsigned)
+        if isinstance(val, int):
             return GGUFValueType.INT32
-        # TODO: need help with 64-bit types in Python
+
+        elif isinstance(val, float):
+            # NOTE: This is unreliable in python as all numbers in python are 64-bits
+            return GGUFValueType.FLOAT32
+
+        elif isinstance(val, list):
+            return GGUFValueType.ARRAY
+
+        elif isinstance(val, dict):
+            # NOTE: JSON Object, Dict, or Mapping are valid types
+            return GGUFValueType.OBJECT
+
         else:
             raise ValueError(f"Unknown type: {type(val)}")
 
