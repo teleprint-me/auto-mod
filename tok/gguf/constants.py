@@ -27,7 +27,7 @@ class GGUFMetadataKeys:
         DESCRIPTION = "general.description"
         LICENSE = "general.license"
         SOURCE_URL = "general.source.url"
-        SOURCE_HF_REPO = "general.source.huggingface.repository"
+        SOURCE_REPO = "general.source.repository"
         FILE_TYPE = "general.file_type"
 
     class LLM:
@@ -70,36 +70,35 @@ class GGUFMetadataKeys:
         TIME_STEP_RANK = "{arch}.ssm.time_step_rank"
 
     class Tokenizer:
-        MODEL = "tokenizer.ggml.model"  # Model arch, e.g. llama
-        TYPE = "tokenizer.ggml.type"  # BPE, SPM, WPM, etc.
-        NORM = "tokenizer.ggml.norm"  # Normalizer object
-        PRE = "tokenizer.ggml.pre"  # Pre-tokenizer object
-        ADDED = "tokenizer.ggml.added"  # Added tokens list
-        LIST = "tokenizer.ggml.tokens"
-        TOKEN_TYPE = "tokenizer.ggml.token_type"
-        TOKEN_TYPE_COUNT = "tokenizer.ggml.token_type_count"  # BERT token types
-        SCORES = "tokenizer.ggml.scores"
-        MERGES = "tokenizer.ggml.merges"
-        BOS_ID = "tokenizer.ggml.bos_token_id"
-        EOS_ID = "tokenizer.ggml.eos_token_id"
-        UNK_ID = "tokenizer.ggml.unknown_token_id"
-        SEP_ID = "tokenizer.ggml.seperator_token_id"
-        PAD_ID = "tokenizer.ggml.padding_token_id"
-        CLS_ID = "tokenizer.ggml.cls_token_id"
-        MASK_ID = "tokenizer.ggml.mask_token_id"
-        ADD_BOS = "tokenizer.ggml.add_bos_token"
-        ADD_EOS = "tokenizer.ggml.add_eos_token"
-        ADD_PREFIX = "tokenizer.ggml.add_space_prefix"
-        HF_JSON = "tokenizer.huggingface.json"
+        MODEL = "tokenizer.model"  # Model arch, e.g. llama
+        TYPE = "tokenizer.type"  # BPE, SPM, WPM, etc.
+        NORM = "tokenizer.norm"  # Normalizer object
+        PRE = "tokenizer.pre"  # Pre-tokenizer object
+        ADDED = "tokenizer.added"  # Added tokens list
+        VOCAB = "tokenizer.vocab"
+        TOKEN_TYPE = "tokenizer.token_type"
+        TOKEN_TYPE_COUNT = "tokenizer.token_type_count"  # BERT token types
+        SCORES = "tokenizer.scores"
+        MERGES = "tokenizer.merges"
+        BOS_ID = "tokenizer.bos_token_id"
+        EOS_ID = "tokenizer.eos_token_id"
+        UNK_ID = "tokenizer.unknown_token_id"
+        SEP_ID = "tokenizer.seperator_token_id"
+        PAD_ID = "tokenizer.padding_token_id"
+        CLS_ID = "tokenizer.cls_token_id"
+        MASK_ID = "tokenizer.mask_token_id"
+        ADD_BOS = "tokenizer.add_bos_token"
+        ADD_EOS = "tokenizer.add_eos_token"
+        ADD_PREFIX = "tokenizer.add_space_prefix"
         RWKV = "tokenizer.rwkv.world"
         CHAT_TEMPLATE = "tokenizer.chat_template"
         CHAT_TEMPLATE_N = "tokenizer.chat_template.{name}"
         CHAT_TEMPLATES = "tokenizer.chat_templates"
         # FIM/Infill special tokens constants
-        PREFIX_ID = "tokenizer.ggml.prefix_token_id"
-        SUFFIX_ID = "tokenizer.ggml.suffix_token_id"
-        MIDDLE_ID = "tokenizer.ggml.middle_token_id"
-        EOT_ID = "tokenizer.ggml.eot_token_id"
+        PREFIX_ID = "tokenizer.prefix_token_id"
+        SUFFIX_ID = "tokenizer.suffix_token_id"
+        MIDDLE_ID = "tokenizer.middle_token_id"
+        EOT_ID = "tokenizer.eot_token_id"
 
 
 #
