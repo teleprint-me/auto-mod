@@ -90,7 +90,7 @@ void gguf_print_backtrace(void) {
  * This function uses variadic arguments (va_list) and `vsnprintf` to format
  * the given string based on the provided format specifiers. It ensures that
  * the resulting size is within the bounds of an integer by checking it with
- * GGUF\_ASSERT before copying the formatted output into a std::vector<char>.
+ * GGUF_ASSERT before copying the formatted output into a std::vector<char>.
  * Finally, it returns the result as a std::string object.
  *
  * @return The formatted string as a std::string object.
@@ -369,11 +369,34 @@ static const std::map<llm_kv, const char*> LLM_KV_NAMES = {
     {LLM_KV_TOKENIZER_EOT_ID, "tokenizer.eot_token_id"},
 };
 
+/**
+ * @brief A struct representing a mapping between an LLM architecture (arch)
+ * and its corresponding string representation (name).
+ *
+ * This struct provides a convenient way to map an enumeration value
+ * (llm_arch or llm_kv) to the corresponding constant name as a
+ * std::string. It takes an `LLM_KV` constructor argument specifying
+ * the LLM architecture and stores it internally for later use when
+ * generating the string representation using `operator()`.
+ *
+ * @param arch The enumeration value representing the LLM architecture.
+ */
 struct LLM_KV {
     LLM_KV(llm_arch arch) : arch(arch) {}
 
     llm_arch arch;
 
+    /**
+     * @brief Generate a string representation of an `LLM_KV` object.
+     *
+     * This function takes an enumeration value (kv) representing the
+     * desired key-value pair, and returns the corresponding string
+     * representation by looking up both LLM_ARCH_NAMES and
+     * LLM_KV_NAMES maps for their respective values.
+     *
+     * @param kv The enumeration value specifying the desired key-value
+     *           pair to generate a string representation for.
+     */
     std::string operator()(llm_kv kv) const {
         return gguf_format(LLM_KV_NAMES.at(kv), LLM_ARCH_NAMES.at(arch));
     }
