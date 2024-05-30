@@ -13,7 +13,7 @@
 #include <vector>
 #include <wait.h>
 
-void ggml_print_backtrace(void) {
+void gguf_print_backtrace(void) {
     char attach[32];
     snprintf(attach, sizeof(attach), "attach %d", getpid());
     int pid = fork();
@@ -39,12 +39,12 @@ void ggml_print_backtrace(void) {
     }
 }
 
-#define GGML_ASSERT(x)                                                           \
+#define GGUF_ASSERT(x)                                                           \
     do {                                                                         \
         if (!(x)) {                                                              \
             fflush(stdout);                                                      \
             fprintf(stderr, "GGML_ASSERT: %s:%d: %s\n", __FILE__, __LINE__, #x); \
-            ggml_print_backtrace();                                              \
+            gguf_print_backtrace();                                              \
             abort();                                                             \
         }                                                                        \
     } while (0)
@@ -58,24 +58,24 @@ void ggml_print_backtrace(void) {
  * @return The formatted string as a std::string object.
  *
  * Usage:
- *   #include <sstream>
+ *   #include <gguf.h>
  *
- *   auto result = ggml_format("Hello, %s!", "World");
+ *   auto result = llama_format("Hello, %s!", "World");
  *   std::cout << result;
  */
-static std::string ggml_format(const char* fmt, ...) {
+static std::string gguf_format(const char* fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
 
     int size_original = vsnprintf(NULL, 0, fmt, ap);
-    GGML_ASSERT(size_original >= 0 && size_original < INT_MAX);
+    GGUF_ASSERT(size_original >= 0 && size_original < INT_MAX);
 
     std::vector<char> buf(size_original + 1);
     int               size_copy = vsnprintf(buf.data(), size_original + 1, fmt, ap);
 
     va_end(ap);
 
-    GGML_ASSERT(size_copy == size_original);
+    GGUF_ASSERT(size_copy == size_original);
     return std::string(buf.data(), buf.size());
 }
 
@@ -337,7 +337,7 @@ struct LLM_KV {
     llm_arch arch;
 
     std::string operator()(llm_kv kv) const {
-        return ggml_format(LLM_KV_NAMES.at(kv), LLM_ARCH_NAMES.at(arch));
+        return gguf_format(LLM_KV_NAMES.at(kv), LLM_ARCH_NAMES.at(arch));
     }
 };
 
@@ -412,10 +412,10 @@ struct gguf_vocab {
     bool add_space_prefix = true;
 
     int find_bpe_rank(const std::string &token_left, const std::string &token_right) const {
-        GGML_ASSERT(token_left.find(' ') == std::string::npos);
-        GGML_ASSERT(token_left.find('\n') == std::string::npos);
-        GGML_ASSERT(token_right.find(' ') == std::string::npos);
-        GGML_ASSERT(token_right.find('\n') == std::string::npos);
+        GGUF_ASSERT(token_left.find(' ') == std::string::npos);
+        GGUF_ASSERT(token_left.find('\n') == std::string::npos);
+        GGUF_ASSERT(token_right.find(' ') == std::string::npos);
+        GGUF_ASSERT(token_right.find('\n') == std::string::npos);
 
         auto it = bpe_ranks.find(std::make_pair(token_left, token_right));
         if (it == bpe_ranks.end()) {
