@@ -17,7 +17,8 @@ if (
 ):
     sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from gguf import GGUFReader, GGUFValueType  # noqa: E402
+from ..gguf_reader import GGUFReader
+from ..constants import GGUFValueType
 
 logger = logging.getLogger("gguf-dump")
 
