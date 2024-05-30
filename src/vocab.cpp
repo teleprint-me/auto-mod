@@ -1,3 +1,5 @@
+#include <climits>
+#include <cstdarg>
 #include <cstring>
 #include <format>
 #include <fstream>
@@ -8,6 +10,7 @@
 #include <pthread.h>
 #include <string>
 #include <sys/wait.h>
+#include <vector>
 #include <wait.h>
 
 void ggml_print_backtrace(void) {
@@ -45,6 +48,36 @@ void ggml_print_backtrace(void) {
             abort();                                                             \
         }                                                                        \
     } while (0)
+
+/* @brief A custom implementation of a formatted string printer
+ *
+ * This function is similar to std::printf but uses variadic macros and vsnprintf
+ * to print its arguments into a buffer instead.
+ *
+ * @param fmt The string to be formatted
+ * @return The formatted string as a std::string object.
+ *
+ * Usage:
+ *   #include <sstream>
+ *
+ *   auto result = ggml_format("Hello, %s!", "World");
+ *   std::cout << result;
+ */
+static std::string ggml_format(const char* fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+
+    int size_original = vsnprintf(NULL, 0, fmt, ap);
+    GGML_ASSERT(size_original >= 0 && size_original < INT_MAX);
+
+    std::vector<char> buf(size_original + 1);
+    int               size_copy = vsnprintf(buf.data(), size_original + 1, fmt, ap);
+
+    va_end(ap);
+
+    GGML_ASSERT(size_copy == size_original);
+    return std::string(buf.data(), buf.size());
+}
 
 enum llm_arch {
     LLM_ARCH_LLAMA,
@@ -84,7 +117,7 @@ enum llm_arch {
     LLM_ARCH_UNKNOWN,
 };
 
-static const std::map<llm_arch, const std::string> LLM_ARCH_NAMES = {
+static const std::map<llm_arch, const char*> LLM_ARCH_NAMES = {
     {LLM_ARCH_LLAMA, "llama"},
     {LLM_ARCH_FALCON, "falcon"},
     {LLM_ARCH_GROK, "grok"},
@@ -210,7 +243,7 @@ enum llm_kv {
     LLM_KV_TOKENIZER_EOT_ID,
 };
 
-static const std::map<llm_kv, const std::string> LLM_KV_NAMES = {
+static const std::map<llm_kv, const char*> LLM_KV_NAMES = {
     {LLM_KV_GENERAL_ARCHITECTURE, "general.architecture"},
     {LLM_KV_GENERAL_QUANTIZATION_VERSION, "general.quantization_version"},
     {LLM_KV_GENERAL_ALIGNMENT, "general.alignment"},
@@ -299,21 +332,12 @@ static const std::map<llm_kv, const std::string> LLM_KV_NAMES = {
 };
 
 struct LLM_KV {
-  public:
     LLM_KV(llm_arch arch) : arch(arch) {}
 
     llm_arch arch;
 
-    const std::string operator()(llm_kv kv) {
-        return std::format("{} ({})", getName(kv), getArchName(arch));
-    }
-
-    const std::string getName(llm_kv kv) {
-        return LLM_KV_NAMES.at(kv);
-    }
-
-    const std::string getArchName(llm_arch arch) {
-        return LLM_ARCH_NAMES.at(arch);
+    std::string operator()(llm_kv kv) const {
+        return ggml_format(LLM_KV_NAMES.at(kv), LLM_ARCH_NAMES.at(arch));
     }
 };
 
