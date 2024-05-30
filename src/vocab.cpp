@@ -3,6 +3,142 @@
 #include <getopt.h>
 #include <iostream>
 #include <nlohmann/json.hpp>
+#include <pthread.h>
+#include <sys/wait.h>
+#include <wait.h>
+
+void ggml_print_backtrace(void) {
+    /*
+    #include <dlfcn.h>
+    #include <execinfo.h>
+
+    void * trace[100];
+
+    int nptrs = backtrace(trace, sizeof(trace)/sizeof(trace[0]));
+
+    backtrace_symbols_fd(trace, nptrs, STDERR_FILENO);
+    */
+
+    // backtrack_symbols does not show line numbers, use gdb instead
+    char attach[32];
+    snprintf(attach, sizeof(attach), "attach %d", getpid());
+    int pid = fork();
+    if (pid == 0) {
+        execlp(
+            "gdb",
+            "gdb",
+            "--batch",
+            "-ex",
+            "set style enabled on",
+            "-ex",
+            attach,
+            "-ex",
+            "bt -frame-info source-and-location",
+            "-ex",
+            "detach",
+            "-ex",
+            "quit",
+            (char*) NULL
+        );
+    } else {
+        waitpid(pid, NULL, 0);
+    }
+}
+
+#define GGML_ASSERT(x)                                                           \
+    do {                                                                         \
+        if (!(x)) {                                                              \
+            fflush(stdout);                                                      \
+            fprintf(stderr, "GGML_ASSERT: %s:%d: %s\n", __FILE__, __LINE__, #x); \
+            ggml_print_backtrace();                                              \
+            abort();                                                             \
+        }                                                                        \
+    } while (0)
+
+enum gguf_vocab_type {
+    GGUF_VOCAB_TYPE_NONE = 0, // Models has no vocab
+    GGUF_VOCAB_TYPE_SPM  = 1, // Tokenizer Byte Level BPE with byte fallback
+    GGUF_VOCAB_TYPE_BPE  = 2, // GPT-2 tokenizer Byte Level BPE
+    GGUF_VOCAB_TYPE_WPM  = 3, // BERT tokenizer Byte Level WordPiece
+};
+
+enum gguf_token_type {
+    GGUF_TOKEN_TYPE_UNDEFINED    = 0,
+    GGUF_TOKEN_TYPE_NORMAL       = 1,
+    GGUF_TOKEN_TYPE_UNKNOWN      = 2,
+    GGUF_TOKEN_TYPE_CONTROL      = 3,
+    GGUF_TOKEN_TYPE_USER_DEFINED = 4,
+    GGUF_TOKEN_TYPE_UNUSED       = 5,
+    GGUF_TOKEN_TYPE_BYTE         = 6,
+};
+
+enum gguf_token_flags {
+    GGUF_TOKEN_FLAG_SPECIAL     = 0,
+    GGUF_TOKEN_FLAG_NORMALIZED  = 1,
+    GGUF_TOKEN_FLAG_LSTRIP      = 2,
+    GGUF_TOKEN_FLAG_RSTRIP      = 3,
+    GGUF_TOKEN_FLAG_SINGLE_WORD = 4,
+};
+
+struct gguf_vocab {
+    using id     = int32_t;
+    using token  = std::string;
+    using ttype  = gguf_token_type;
+    using tflags = gguf_token_flags;
+
+    struct token_data {
+        token  text;
+        float  score;
+        ttype  type;
+        tflags flags;
+    };
+
+    std::string              arch;
+    enum gguf_vocab_type     type = GGUF_VOCAB_TYPE_SPM;
+    std::vector<std::string> norm;
+    std::vector<std::string> pre;
+
+    std::unordered_map<token, id> token_to_id;
+    std::vector<token_data>       id_to_token;
+
+    std::vector<id> special_tokens_cache;
+
+    std::map<std::pair<std::string, std::string>, int> bpe_ranks;
+
+    // default LLaMA special tokens
+    id special_bos_id  = 1;
+    id special_eos_id  = 2;
+    id special_unk_id  = 0;
+    id special_sep_id  = -1;
+    id special_pad_id  = -1;
+    id special_cls_id  = -1;
+    id special_mask_id = -1;
+
+    int special_add_bos = -1; // -1 unknown, 1 add, 0 don't add.
+    int special_add_eos = -1; // -1 unknown, 1 add, 0 don't add.
+
+    id linefeed_id       = 13;
+    id special_prefix_id = -1;
+    id special_suffix_id = -1;
+    id special_middle_id = -1;
+    id special_eot_id = -1; // TODO: move above after "eos_id", and here add "file separator" token
+
+    bool add_space_prefix = true;
+
+    int find_bpe_rank(const std::string &token_left, const std::string &token_right) const {
+        GGML_ASSERT(token_left.find(' ') == std::string::npos);
+        GGML_ASSERT(token_left.find('\n') == std::string::npos);
+        GGML_ASSERT(token_right.find(' ') == std::string::npos);
+        GGML_ASSERT(token_right.find('\n') == std::string::npos);
+
+        auto it = bpe_ranks.find(std::make_pair(token_left, token_right));
+        if (it == bpe_ranks.end()) {
+            return -1;
+        }
+
+        return it->second;
+    }
+};
 
 int main(int argc, char* argv[]) {
     if (1 == argc) {
