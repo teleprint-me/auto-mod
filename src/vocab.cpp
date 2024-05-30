@@ -13,11 +13,28 @@
 #include <vector>
 #include <wait.h>
 
+/**
+ * @brief Print a backtrace using gdb in batch mode and detach the process after execution.
+ *
+ * This function forks a new process to execute gdb with given arguments,
+ * including an attachment command (attach) that specifies the current pid.
+ * It then sets up some style options, executes the attach command, prints
+ * the backtrace using 'bt -frame-info source-and-location', detaches from
+ * gdb and quits.
+ *
+ * Usage:
+ *   #include <gguf.h>
+ *
+ *   gguf_print_backtrace();
+ */
 void gguf_print_backtrace(void) {
     char attach[32];
     snprintf(attach, sizeof(attach), "attach %d", getpid());
+
     int pid = fork();
+
     if (pid == 0) {
+        // Child process
         execlp(
             "gdb",
             "gdb",
@@ -35,25 +52,49 @@ void gguf_print_backtrace(void) {
             (char*) NULL
         );
     } else {
+        // Parent process
         waitpid(pid, NULL, 0);
     }
 }
 
+/**
+ * @brief A custom assertion macro that prints a backtrace and aborts if the condition is not met.
+ *
+ * This macro checks whether the given expression (x) evaluates to true. If it's false,
+ * it will print an error message containing the file name, line number, and the
+ * original expression itself on stderr, call `gguf_print_backtrace()` to generate
+ * a backtrace using gdb in batch mode, and then abort the process with exit code 1.
+ *
+ * @param x The condition that should be true for the macro to not trigger an error.
+ *
+ * Usage:
+ *   #include <gguf.h>
+ *
+ *   GGUF_ASSERT(5 == size)
+ */
 #define GGUF_ASSERT(x)                                                           \
     do {                                                                         \
         if (!(x)) {                                                              \
             fflush(stdout);                                                      \
-            fprintf(stderr, "GGML_ASSERT: %s:%d: %s\n", __FILE__, __LINE__, #x); \
+            fprintf(stderr, "GGUF_ASSERT: %s:%d: %s\n", __FILE__, __LINE__, #x); \
             gguf_print_backtrace();                                              \
             abort();                                                             \
         }                                                                        \
     } while (0)
 
-/* @brief A custom implementation of std::format for backward compatibility.
+/**
+ * @brief A custom implementation of std::format for backward compatibility.
  *
  * Format args according to the format string and return the result as a string.
  *
  * @param fmt The string to be formatted.
+ *
+ * This function uses variadic arguments (va_list) and `vsnprintf` to format
+ * the given string based on the provided format specifiers. It ensures that
+ * the resulting size is within the bounds of an integer by checking it with
+ * GGUF\_ASSERT before copying the formatted output into a std::vector<char>.
+ * Finally, it returns the result as a std::string object.
+ *
  * @return The formatted string as a std::string object.
  *
  * Usage:
