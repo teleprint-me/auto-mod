@@ -11,18 +11,6 @@
 #include <wait.h>
 
 void ggml_print_backtrace(void) {
-    /*
-    #include <dlfcn.h>
-    #include <execinfo.h>
-
-    void * trace[100];
-
-    int nptrs = backtrace(trace, sizeof(trace)/sizeof(trace[0]));
-
-    backtrace_symbols_fd(trace, nptrs, STDERR_FILENO);
-    */
-
-    // backtrack_symbols does not show line numbers, use gdb instead
     char attach[32];
     snprintf(attach, sizeof(attach), "attach %d", getpid());
     int pid = fork();
