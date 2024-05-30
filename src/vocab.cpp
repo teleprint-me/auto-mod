@@ -49,19 +49,18 @@ void gguf_print_backtrace(void) {
         }                                                                        \
     } while (0)
 
-/* @brief A custom implementation of a formatted string printer
+/* @brief A custom implementation of std::format for backward compatibility.
  *
- * This function is similar to std::printf but uses variadic macros and vsnprintf
- * to print its arguments into a buffer instead.
+ * Format args according to the format string and return the result as a string.
  *
- * @param fmt The string to be formatted
+ * @param fmt The string to be formatted.
  * @return The formatted string as a std::string object.
  *
  * Usage:
  *   #include <gguf.h>
  *
- *   auto result = llama_format("Hello, %s!", "World");
- *   std::cout << result;
+ *   auto result = gguf_format("Hello, %s!", "World");
+ *   std::cout << result << std::endl;
  */
 static std::string gguf_format(const char* fmt, ...) {
     va_list ap;
