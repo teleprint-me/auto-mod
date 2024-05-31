@@ -30,6 +30,7 @@ from sentencepiece import SentencePieceProcessor
 from torch import Tensor
 from transformers import AutoTokenizer
 
+from .. import awq
 from ..constants import (
     GGML_QUANT_VERSION,
     GGUF_MODEL_ARCH,
@@ -3128,9 +3129,6 @@ def main() -> None:
     dir_model = args.model
 
     if args.awq_path:
-        sys.path.insert(1, str(Path(__file__).parent / "awq-py"))
-        from awq.apply_awq import add_scale_weights  # type: ignore[import-not-found]
-
         tmp_model_path = args.model / "weighted_model"
         dir_model = tmp_model_path
         if tmp_model_path.is_dir():
@@ -3138,7 +3136,9 @@ def main() -> None:
         else:
             tmp_model_path.mkdir(parents=True, exist_ok=True)
             logger.info("Saving new weighted model ...")
-            add_scale_weights(str(args.model), str(args.awq_path), str(tmp_model_path))
+            awq.add_scale_weights(
+                str(args.model), str(args.awq_path), str(tmp_model_path)
+            )
             logger.info(f"Saved weighted model at {tmp_model_path}.")
 
     if not dir_model.is_dir():
