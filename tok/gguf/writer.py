@@ -548,7 +548,7 @@ class GGUFWriter:
         self.add_string(GGUFMetadataKeys.Tokenizer.PRE, value)
 
     def add_tokenizer_added(self, value: str) -> None:
-        self.add_string(GGUFMetadataKeys.Tokenizer.PRE, value)
+        self.add_string(GGUFMetadataKeys.Tokenizer.ADDED, value)
 
     def add_tokenizer_vocab(
         self, tokens: Sequence[str] | Sequence[bytes] | Sequence[bytearray]
@@ -571,34 +571,34 @@ class GGUFWriter:
     def add_tokenizer_scores(self, scores: Sequence[float]) -> None:
         self.add_array(GGUFMetadataKeys.Tokenizer.SCORES, scores)
 
-    def add_bos_token_id(self, id: int) -> None:
+    def add_tokenizer_bos_id(self, id: int) -> None:
         self.add_uint32(GGUFMetadataKeys.Tokenizer.BOS_ID, id)
 
-    def add_eos_token_id(self, id: int) -> None:
+    def add_tokenizer_eos_id(self, id: int) -> None:
         self.add_uint32(GGUFMetadataKeys.Tokenizer.EOS_ID, id)
 
-    def add_unk_token_id(self, id: int) -> None:
+    def add_tokenizer_unk_id(self, id: int) -> None:
         self.add_uint32(GGUFMetadataKeys.Tokenizer.UNK_ID, id)
 
-    def add_sep_token_id(self, id: int) -> None:
+    def add_tokenizer_sep_id(self, id: int) -> None:
         self.add_uint32(GGUFMetadataKeys.Tokenizer.SEP_ID, id)
 
-    def add_pad_token_id(self, id: int) -> None:
+    def add_tokenizer_pad_id(self, id: int) -> None:
         self.add_uint32(GGUFMetadataKeys.Tokenizer.PAD_ID, id)
 
-    def add_cls_token_id(self, id: int) -> None:
+    def add_tokenizer_cls_id(self, id: int) -> None:
         self.add_uint32(GGUFMetadataKeys.Tokenizer.CLS_ID, id)
 
-    def add_mask_token_id(self, id: int) -> None:
+    def add_tokenizer_mask_id(self, id: int) -> None:
         self.add_uint32(GGUFMetadataKeys.Tokenizer.MASK_ID, id)
 
-    def add_add_bos_token(self, value: bool) -> None:
+    def add_tokenizer_bos_flag(self, value: bool) -> None:
         self.add_bool(GGUFMetadataKeys.Tokenizer.ADD_BOS, value)
 
-    def add_add_eos_token(self, value: bool) -> None:
+    def add_tokenizer_eos_flag(self, value: bool) -> None:
         self.add_bool(GGUFMetadataKeys.Tokenizer.ADD_EOS, value)
 
-    def add_add_space_prefix(self, value: bool) -> None:
+    def add_tokenizer_space_prefix(self, value: bool) -> None:
         self.add_bool(GGUFMetadataKeys.Tokenizer.ADD_PREFIX, value)
 
     def add_chat_template(self, value: str | Sequence[Mapping[str, str]]) -> None:
@@ -639,16 +639,17 @@ class GGUFWriter:
 
         self.add_string(GGUFMetadataKeys.Tokenizer.CHAT_TEMPLATE, value)
 
-    def add_prefix_token_id(self, id: int) -> None:
+    def add_tokenizer_prefix_id(self, id: int) -> None:
         self.add_uint32(GGUFMetadataKeys.Tokenizer.PREFIX_ID, id)
 
-    def add_suffix_token_id(self, id: int) -> None:
+    def add_tokenizer_suffix_id(self, id: int) -> None:
         self.add_uint32(GGUFMetadataKeys.Tokenizer.SUFFIX_ID, id)
 
-    def add_middle_token_id(self, id: int) -> None:
+    def add_tokenizer_middle_id(self, id: int) -> None:
         self.add_uint32(GGUFMetadataKeys.Tokenizer.MIDDLE_ID, id)
 
-    def add_eot_token_id(self, id: int) -> None:
+    def add_tokenizer_eot_id(self, id: int) -> None:
+        # NOTE: Need to do more digging to see if this is even necessary
         self.add_uint32(GGUFMetadataKeys.Tokenizer.EOT_ID, id)
 
     def _pack(self, fmt: str, value: Any, skip_pack_prefix: bool = False) -> bytes:
