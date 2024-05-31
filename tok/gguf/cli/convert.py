@@ -3076,11 +3076,11 @@ def parse_args() -> argparse.Namespace:
         help="A Hugging Face read authentication token (default: None).",
     )
     parser.add_argument(
-        "-i",
-        "--input-path",
+        "-m",
+        "--model-path",
         type=Path,
         default="models",
-        help="The models input directory path (default: 'models').",
+        help="The models directory path (default: 'models').",
     )
     parser.add_argument(
         "-f",
@@ -3102,13 +3102,6 @@ def parse_args() -> argparse.Namespace:
         "--tokenizer-model", action="store_true", help="Create a GGUF tokenizer model."
     )
     parser.add_argument(
-        "-o",
-        "--output-path",
-        type=Path,
-        default="models",
-        help="The models output file path (default: input path).",
-    )
-    parser.add_argument(
         "--output-type",
         type=str,
         choices=["f32", "f16", "bf16", "q8_0", "auto"],
@@ -3120,10 +3113,10 @@ def parse_args() -> argparse.Namespace:
         "\t- q8_0: Q8_0\n"
         "\t- auto: the highest-fidelity 16-bit float type depending on the first loaded tensor type.",
     )
-    parser.add_argument(
-        "--awq-path",
-        type=Path,
-        help="Path to scale Activation-aware Weight Quantization (AWQ) cache file.",
+    parser.add_argument(  # TODO
+        "--use-awq",
+        action="store_true",
+        help="Scale Activation-aware Weight Quantization (AWQ) cache file.",
     )
     parser.add_argument(
         "--big-endian",
@@ -3157,7 +3150,7 @@ def main() -> None:
 
     dir_model = args.model
 
-    if args.awq_path:
+    if args.use_awq:  # TODO
         tmp_model_path = args.model / "weighted_model"
         dir_model = tmp_model_path
         if tmp_model_path.is_dir():
@@ -3165,7 +3158,7 @@ def main() -> None:
         else:
             tmp_model_path.mkdir(parents=True, exist_ok=True)
             logger.info("Saving new weighted model ...")
-            awq.add_scale_weights(
+            awq.add_scale_weights(  # NOTE: This is broken
                 str(args.model), str(args.awq_path), str(tmp_model_path)
             )
             logger.info(f"Saved weighted model at {tmp_model_path}.")

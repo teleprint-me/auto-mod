@@ -235,6 +235,8 @@ def apply_clip(module, clip_list):
         layer.cpu()
 
 
+# TODO: Fix the model path references.
+# NOTE: Model and Scale path should be the same. There's no valid rationale for these to differ.
 def add_scale_weights(model_path, scale_path, tmp_path):
     """
     Adds pre-computed Activation Weight Quantization (AWQ) results to a model,
