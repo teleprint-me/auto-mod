@@ -568,7 +568,7 @@ class GGUFWriter:
     def add_tokenizer_token_type_count(self, value: int) -> None:
         self.add_uint32(GGUFMetadataKeys.Tokenizer.TOKEN_TYPE_COUNT, value)
 
-    def add_token_scores(self, scores: Sequence[float]) -> None:
+    def add_tokenizer_scores(self, scores: Sequence[float]) -> None:
         self.add_array(GGUFMetadataKeys.Tokenizer.SCORES, scores)
 
     def add_bos_token_id(self, id: int) -> None:
