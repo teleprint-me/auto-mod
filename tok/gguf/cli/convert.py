@@ -25,7 +25,10 @@ from typing import (
 
 import numpy as np
 import torch
+from safetensors import safe_open
+from sentencepiece import SentencePieceProcessor
 from torch import Tensor
+from transformers import AutoTokenizer
 
 from ..constants import (
     GGML_QUANT_VERSION,
@@ -34,16 +37,14 @@ from ..constants import (
     GGUF_MODEL_TENSOR,
     GGUF_MODEL_TENSORS,
     GGUF_TENSOR_NAMES,
-    GGUFQuantizationType,
     GGUFEndian,
-    GGUFMetadataKeys,
     GGUFFileType,
+    GGUFMetadataKeys,
+    GGUFQuantizationType,
     GGUFRopeScalingType,
-    ModelTokenType,
     ModelTokenizerType,
+    ModelTokenType,
 )
-from ..reader import GGUFReader
-from ..writer import GGUFWriter
 from ..lazy import LazyBase, LazyNumpyTensor
 from ..quants import (
     can_quantize_to_q8_0,
@@ -52,8 +53,10 @@ from ..quants import (
     quantize_bf16,
     quantize_q8_0,
 )
+from ..reader import GGUFReader
 from ..tensor_mapping import TensorNameMap, get_tensor_name_map
-from ..vocab import LlamaHfVocab, GGUFSpecialVocab
+from ..vocab import GGUFSpecialVocab, LlamaHfVocab
+from ..writer import GGUFWriter
 
 logger = logging.getLogger(__file__)
 
@@ -180,8 +183,6 @@ class Model:
             logger.info(f"gguf: loading model part '{part_name}'")
             ctx: ContextManager[Any]
             if self.is_safetensors:
-                from safetensors import safe_open
-
                 ctx = cast(
                     ContextManager[Any],
                     safe_open(self.dir_model / part_name, framework="pt", device="cpu"),
@@ -488,14 +489,13 @@ class Model:
         try:
             return cls._model_classes[arch]
         except KeyError:
+            # NOTE: raise new_exc from original_exc is an implicit exception context
             raise NotImplementedError(f"Architecture {arch!r} not supported!") from None
 
     # used for GPT-2 BPE and WordPiece vocabs
     def get_vocab_base(self) -> tuple[list[str], list[int], str]:
         tokens: list[str] = []
         toktypes: list[int] = []
-
-        from transformers import AutoTokenizer
 
         tokenizer = AutoTokenizer.from_pretrained(self.dir_model)
         vocab_size = self.hparams.get("vocab_size", len(tokenizer.vocab))
@@ -597,8 +597,6 @@ class Model:
         tokens: list[str] = []
         toktypes: list[int] = []
 
-        from transformers import AutoTokenizer
-
         tokenizer = AutoTokenizer.from_pretrained(dir_model, trust_remote_code=True)
         vocab_size = hparams["vocab_size"]
         assert max(tokenizer.get_vocab().values()) < vocab_size
@@ -655,8 +653,6 @@ class Model:
         special_vocab.add_to_gguf(self.gguf_writer)
 
     def _set_vocab_sentencepiece(self):
-        from sentencepiece import SentencePieceProcessor
-
         tokenizer_path = self.dir_model / "tokenizer.model"
 
         tokens: list[bytes] = []
@@ -1100,8 +1096,6 @@ class XverseModel(Model):
 
         tokens: list[bytes] = []
         toktypes: list[int] = []
-
-        from transformers import AutoTokenizer
 
         tokenizer = AutoTokenizer.from_pretrained(dir_model)
         vocab_size = hparams.get("vocab_size", len(tokenizer.vocab))
@@ -2011,8 +2005,6 @@ class Phi3MiniModel(Model):
     model_arch = GGUF_MODEL_ARCH.PHI3
 
     def set_vocab(self):
-        from sentencepiece import SentencePieceProcessor
-
         tokenizer_path = self.dir_model / "tokenizer.model"
 
         if not tokenizer_path.is_file():
@@ -2290,7 +2282,6 @@ class InternLM2Model(Model):
         # Copy from _set_vocab_sentencepiece, The only difference is that we will treat the character
         # \x00 specially and convert it into an emoji character to prevent it from being mistakenly
         # recognized as an empty string in C++.
-        from sentencepiece import SentencePieceProcessor
         from sentencepiece import sentencepiece_model_pb2 as model
 
         tokenizer_path = self.dir_model / "tokenizer.model"
@@ -2876,8 +2867,6 @@ class ArcticModel(Model):
         # The reason for using a custom implementation here is that the
         # snowflake-arctic-instruct model redefined tokens 31998 and 31999 from
         # tokenizer.model and used them as BOS and EOS instead of adding new tokens.
-        from sentencepiece import SentencePieceProcessor
-
         tokenizer_path = self.dir_model / "tokenizer.model"
 
         if not tokenizer_path.is_file():
