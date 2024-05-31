@@ -3074,19 +3074,19 @@ def parse_args() -> argparse.Namespace:
         help="Path to scale awq cache file",
     )
     parser.add_argument(
-        "--outfile",
+        "--out-file",
         type=Path,
         help="path to write to; default: based on input. {ftype} will be replaced by the outtype.",
     )
     parser.add_argument(
-        "--outtype",
+        "--out-type",
         type=str,
         choices=["f32", "f16", "bf16", "q8_0", "auto"],
         default="f16",
         help="output format - use f32 for float32, f16 for float16, bf16 for bfloat16, q8_0 for Q8_0, auto for the highest-fidelity 16-bit float type depending on the first loaded tensor type",
     )
     parser.add_argument(
-        "--bigendian",
+        "--big-endian",
         action="store_true",
         help="model is executed on big endian machine",
     )
