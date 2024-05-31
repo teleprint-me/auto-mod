@@ -598,7 +598,7 @@ class GGUFWriter:
     def add_tokenizer_eos_flag(self, value: bool) -> None:
         self.add_bool(GGUFMetadataKeys.Tokenizer.ADD_EOS, value)
 
-    def add_tokenizer_space_prefix(self, value: bool) -> None:
+    def add_tokenizer_prefix(self, value: bool) -> None:
         self.add_bool(GGUFMetadataKeys.Tokenizer.ADD_PREFIX, value)
 
     def add_chat_template(self, value: str | Sequence[Mapping[str, str]]) -> None:
