@@ -30,7 +30,6 @@ from sentencepiece import SentencePieceProcessor
 from torch import Tensor
 from transformers import AutoTokenizer
 
-from .. import awq
 from ..constants import (
     GGML_QUANT_VERSION,
     GGUF_MODEL_ARCH,
@@ -3114,11 +3113,6 @@ def parse_args() -> argparse.Namespace:
         "\t- bf16: bfloat16\n"
         "\t- q8_0: Q8_0\n"
         "\t- auto: the highest-fidelity 16-bit float type depending on the first loaded tensor type.",
-    )
-    parser.add_argument(  # TODO
-        "--use-awq",
-        action="store_true",
-        help="Scale Activation-aware Weight Quantization (AWQ) cache file (default: False)",
     )
     parser.add_argument(
         "--big-endian",
