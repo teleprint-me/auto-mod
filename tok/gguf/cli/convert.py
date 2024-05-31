@@ -3128,8 +3128,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--use-temp-file",
         action="store_true",
-        help="Use temporary swap space for managing memory during processing (default: False)."
-        " Useful when running out of memory or a process is terminated due to resource limitations.",
+        help="Use temporary swap space to mitigate out-of-memory during processing (default: False).",
     )
     parser.add_argument(
         "--no-lazy",
