@@ -3099,7 +3099,9 @@ def parse_args() -> argparse.Namespace:
         help="The models tokenizer type (default: 'SPM').",
     )
     parser.add_argument(
-        "--tokenizer-model", action="store_true", help="Create a GGUF tokenizer model."
+        "--tokenizer-model",
+        action="store_true",
+        help="Create a GGUF tokenizer model (default: False).",
     )
     parser.add_argument(
         "--output-type",
@@ -3116,29 +3118,28 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(  # TODO
         "--use-awq",
         action="store_true",
-        help="Scale Activation-aware Weight Quantization (AWQ) cache file.",
+        help="Scale Activation-aware Weight Quantization (AWQ) cache file (default: False)",
     )
     parser.add_argument(
         "--big-endian",
         action="store_true",
-        help="Write the model file with most significant bytes. Default is False.",
+        help="Write the model file with most significant bytes (default: False).",
     )
     parser.add_argument(
         "--use-temp-file",
         action="store_true",
-        help="Use temporary swap space for managing memory during processing."
+        help="Use temporary swap space for managing memory during processing (default: False)."
         " Useful when running out of memory or a process is terminated due to resource limitations.",
     )
     parser.add_argument(
         "--no-lazy",
         action="store_true",
-        help="Compute all outputs before writing instead of using lazy evaluation (use if lazy evaluation is broken)."
-        " This option requires more RAM.",
+        help="Disable lazy evaluation (default: False). Use if lazy evaluation is broken. Requires more RAM.",
     )
     parser.add_argument(
         "--verbose",
         action="store_true",
-        help="increase output verbosity",
+        help="Enable DEBUG logging level (default: False).",
     )
     return parser.parse_args()
 
