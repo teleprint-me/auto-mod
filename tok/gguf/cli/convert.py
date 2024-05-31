@@ -3021,6 +3021,7 @@ class ArcticModel(Model):
 # CONVERSION LOGIC #
 ####################
 
+
 # tree of lazy tensors
 class LazyTorchTensor(LazyBase):
     _tensor_type = torch.Tensor
@@ -3062,23 +3063,24 @@ class LazyTorchTensor(LazyBase):
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Convert a huggingface model to a GGML compatible file"
+        description="Convert a Hugging Face model to a GGML compatible file"
     )
     parser.add_argument(
-        "model_repo", type=str, help="The huggingface model repository."
+        "model_repo", type=str, help="The Hugging Face model repository."
     )
     parser.add_argument(
         "-a",
         "--auth-token",
         type=str,
-        help="The huggingface read auth token. Default is None.",
+        default=None,
+        help="A Hugging Face read authentication token (default: None).",
     )
     parser.add_argument(
         "-i",
         "--input-path",
         type=Path,
         default="models",
-        help="The models input directory path. Default is 'models'.",
+        help="The models input directory path (default: 'models').",
     )
     parser.add_argument(
         "-f",
@@ -3088,37 +3090,35 @@ def parse_args() -> argparse.Namespace:
         const=".safetensors",
         nargs="?",
         choices=[".pt", ".pth", ".bin", ".safetensors", ".gguf"],
-        help="The models file name extension. Default is '.safetensors'",
+        help="The models file name extension (default: '.safetensors').",
     )
     parser.add_argument(
-        "--vocab-type",
+        "--tokenizer-type",
         nargs="?",
         choices=["SPM", "BPE", "WPM"],
-        help="The models tokenizer type. Default is 'SPM'.",
+        help="The models tokenizer type (default: 'SPM').",
     )
     parser.add_argument(
-        "--vocab-model",
-        action="store_true",
-        help="Create a GGUF tokenizer model.",
+        "--tokenizer-model", action="store_true", help="Create a GGUF tokenizer model."
     )
     parser.add_argument(
         "-o",
         "--output-path",
         type=Path,
         default="models",
-        help="The models output file path. Default is input path.",
+        help="The models output file path (default: input path).",
     )
     parser.add_argument(
         "--output-type",
         type=str,
         choices=["f32", "f16", "bf16", "q8_0", "auto"],
         default="f16",
-        help="Model precision weights: "
-        "- f32: float32 "
-        "- f16: float16 "
-        "- bf16: bfloat16 "
-        "- q8_0: Q8_0 "
-        "- auto: the highest-fidelity 16-bit float type depending on the first loaded tensor type",
+        help="The models precision (default: 'f16'):\n"
+        "\t- f32: float32\n"
+        "\t- f16: float16\n"
+        "\t- bf16: bfloat16\n"
+        "\t- q8_0: Q8_0\n"
+        "\t- auto: the highest-fidelity 16-bit float type depending on the first loaded tensor type.",
     )
     parser.add_argument(
         "--awq-path",
