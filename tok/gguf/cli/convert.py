@@ -3064,60 +3064,88 @@ def parse_args() -> argparse.Namespace:
         description="Convert a huggingface model to a GGML compatible file"
     )
     parser.add_argument(
-        "--vocab-only",
+        "model_repo", type=str, help="The huggingface model repository."
+    )
+    parser.add_argument(
+        "-a",
+        "--auth-token",
+        type=str,
+        help="The huggingface read auth token. Default is None.",
+    )
+    parser.add_argument(
+        "-i",
+        "--input-path",
+        type=Path,
+        default="models",
+        help="The models input directory path. Default is 'models'.",
+    )
+    parser.add_argument(
+        "-f",
+        "--file-type",
+        type=str,
+        default=".safetensors",
+        const=".safetensors",
+        nargs="?",
+        choices=[".pt", ".pth", ".bin", ".safetensors", ".gguf"],
+        help="The models file name extension. Default is '.safetensors'",
+    )
+    parser.add_argument(
+        "--vocab-type",
+        nargs="?",
+        choices=["SPM", "BPE", "WPM"],
+        help="The models tokenizer type. Default is 'SPM'.",
+    )
+    parser.add_argument(
+        "--vocab-model",
         action="store_true",
-        help="extract only the vocab",
+        help="Create a GGUF tokenizer model.",
+    )
+    parser.add_argument(
+        "-o",
+        "--output-path",
+        type=Path,
+        default="models",
+        help="The models output file path. Default is input path.",
+    )
+    parser.add_argument(
+        "--output-type",
+        type=str,
+        choices=["f32", "f16", "bf16", "q8_0", "auto"],
+        default="f16",
+        help="Model precision weights: "
+        "- f32: float32 "
+        "- f16: float16 "
+        "- bf16: bfloat16 "
+        "- q8_0: Q8_0 "
+        "- auto: the highest-fidelity 16-bit float type depending on the first loaded tensor type",
     )
     parser.add_argument(
         "--awq-path",
         type=Path,
-        default=None,
-        help="Path to scale awq cache file",
-    )
-    parser.add_argument(
-        "--out-file",
-        type=Path,
-        help="path to write to; default: based on input. {ftype} will be replaced by the outtype.",
-    )
-    parser.add_argument(
-        "--out-type",
-        type=str,
-        choices=["f32", "f16", "bf16", "q8_0", "auto"],
-        default="f16",
-        help="output format - use f32 for float32, f16 for float16, bf16 for bfloat16, q8_0 for Q8_0, auto for the highest-fidelity 16-bit float type depending on the first loaded tensor type",
+        help="Path to scale Activation-aware Weight Quantization (AWQ) cache file.",
     )
     parser.add_argument(
         "--big-endian",
         action="store_true",
-        help="model is executed on big endian machine",
-    )
-    parser.add_argument(
-        "model",
-        type=Path,
-        help="directory containing model file",
+        help="Write the model file with most significant bytes. Default is False.",
     )
     parser.add_argument(
         "--use-temp-file",
         action="store_true",
-        help="use the tempfile library while processing (helpful when running out of memory, process killed)",
+        help="Use temporary swap space for managing memory during processing."
+        " Useful when running out of memory or a process is terminated due to resource limitations.",
     )
     parser.add_argument(
         "--no-lazy",
         action="store_true",
-        help="use more RAM by computing all outputs before writing (use in case lazy evaluation is broken)",
-    )
-    parser.add_argument(
-        "--model-name",
-        type=str,
-        default=None,
-        help="name of the model",
+        help="Compute all outputs before writing instead of using lazy evaluation (use if lazy evaluation is broken)."
+        " This option requires more RAM.",
     )
     parser.add_argument(
         "--verbose",
         action="store_true",
         help="increase output verbosity",
     )
-
     return parser.parse_args()
 
 
