@@ -87,7 +87,7 @@ class GGUFSpecialVocab(GGUFVocab):
         if self.merges:
             if not quiet:
                 logger.info(f"Adding {len(self.merges)} merge(s).")
-            gw.add_token_merges(self.merges)
+            gw.add_tokenizer_merges(self.merges)
         elif self.load_merges:
             logger.warning(
                 "Adding merges requested but no merges found, output may be non-functional."
