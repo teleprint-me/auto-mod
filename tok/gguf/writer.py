@@ -175,6 +175,13 @@ class GGUFWriter:
         self.add_key(key)
         self.add_val(val, GGUFValueType.ARRAY)
 
+    def add_object(self, key: str, val: Mapping[Any, Any]) -> None:
+        if not isinstance(val, Mapping):
+            raise ValueError("Value must be a mapping for object type")
+
+        self.add_key(key)
+        self.add_val(val, GGUFValueType.OBJECT)
+
     def add_val(
         self, val: Any, vtype: GGUFValueType | None = None, add_vtype: bool = True
     ) -> None:
@@ -379,7 +386,7 @@ class GGUFWriter:
         self.add_string(GGUFMetadataKeys.General.SOURCE_URL, url)
 
     def add_source_hf_repo(self, repo: str) -> None:
-        self.add_string(GGUFMetadataKeys.General.SOURCE_HF_REPO, repo)
+        self.add_string(GGUFMetadataKeys.General.SOURCE_REPO, repo)
 
     def add_file_type(self, ftype: int) -> None:
         self.add_uint32(GGUFMetadataKeys.General.FILE_TYPE, ftype)
@@ -528,26 +535,37 @@ class GGUFWriter:
             GGUFMetadataKeys.SSM.TIME_STEP_RANK.format(arch=self.arch), value
         )
 
-    def add_tokenizer_model(self, model: str) -> None:
-        self.add_string(GGUFMetadataKeys.Tokenizer.MODEL, model)
+    def add_tokenizer_model(self, value: str) -> None:
+        self.add_string(GGUFMetadataKeys.Tokenizer.MODEL, value)
 
-    def add_tokenizer_pre(self, pre: str) -> None:
-        self.add_string(GGUFMetadataKeys.Tokenizer.PRE, pre)
+    def add_tokenizer_type(self, value: str) -> None:
+        self.add_string(GGUFMetadataKeys.Tokenizer.TYPE, value)
 
-    def add_token_list(
+    def add_tokenizer_norm(self, value: str) -> None:
+        self.add_string(GGUFMetadataKeys.Tokenizer.NORM, value)
+
+    def add_tokenizer_pre(self, value: str) -> None:
+        self.add_string(GGUFMetadataKeys.Tokenizer.PRE, value)
+
+    def add_tokenizer_added(self, value: str) -> None:
+        self.add_string(GGUFMetadataKeys.Tokenizer.PRE, value)
+
+    def add_tokenizer_vocab(
         self, tokens: Sequence[str] | Sequence[bytes] | Sequence[bytearray]
     ) -> None:
-        self.add_array(GGUFMetadataKeys.Tokenizer.LIST, tokens)
+        self.add_array(GGUFMetadataKeys.Tokenizer.VOCAB, tokens)
 
-    def add_token_merges(
+    def add_tokenizer_merges(
         self, merges: Sequence[str] | Sequence[bytes] | Sequence[bytearray]
     ) -> None:
         self.add_array(GGUFMetadataKeys.Tokenizer.MERGES, merges)
 
-    def add_token_types(self, types: Sequence[ModelTokenType] | Sequence[int]) -> None:
+    def add_tokenizer_token_type(
+        self, types: Sequence[ModelTokenType] | Sequence[int]
+    ) -> None:
         self.add_array(GGUFMetadataKeys.Tokenizer.TOKEN_TYPE, types)
 
-    def add_token_type_count(self, value: int) -> None:
+    def add_tokenizer_token_type_count(self, value: int) -> None:
         self.add_uint32(GGUFMetadataKeys.Tokenizer.TOKEN_TYPE_COUNT, value)
 
     def add_token_scores(self, scores: Sequence[float]) -> None:
