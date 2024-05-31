@@ -529,11 +529,9 @@ class Model:
     # ref:  https://github.com/ggerganov/llama.cpp/pull/6920
     # Marker: Start get_vocab_base_pre
     def get_vocab_base_pre(self, tokenizer) -> str:
-        # encoding this string and hashing the resulting tokens would (hopefully) give us a unique identifier that
-        # is specific for the BPE pre-tokenizer used by the model
-        # we will use this unique identifier to write a "tokenizer.ggml.pre" entry in the GGUF file which we can
-        # use in llama.cpp to implement the same pre-tokenizer
-        checksum = sha256(str(tokenizer.vocab).encode()).hexdigest()
+        with open(f"{tokenizer.name_or_path}/tokenizer.json", mode="r") as fp:
+            tokenizer_json = json.load(fp)
+        checksum = sha256(str(tokenizer_json).encode()).hexdigest()
         logger.debug(f"checksum: {checksum}")
 
         # NOTE: IF you get an error here:
@@ -541,15 +539,16 @@ class Model:
         #       Run the `gguf-py/scripts/gguf-gen-pre.py` script to generate the checksums.
         #       This script should ideally pull in the latest version of the model from HuggingFace.
         #       DO NOT MANUALLY EDIT THIS METHOD!
-        models = json.load(f"{tokenizer.name_or_path}/checksums.json")
+        with open("models/registry.json", mode="r") as fp:
+            models = json.load(fp)
         for model in models:
-            if checksum == model["checksum"]:
+            if checksum == model["vocab_hash"]:
                 pre = None
-                if model["tokt"] == ModelTokenizerType.BPE.value:
+                if model["vocab_type"] == ModelTokenizerType.BPE.value:
                     pre = "bpe"
-                elif model["tokt"] == ModelTokenizerType.SPM.value:
+                elif model["vocab_type"] == ModelTokenizerType.SPM.value:
                     pre = "spm"
-                elif model["tokt"] == ModelTokenizerType.WPM.value:
+                elif model["vocab_type"] == ModelTokenizerType.WPM.value:
                     pre = "wpm"
                 else:
                     raise KeyError()
@@ -586,8 +585,8 @@ class Model:
         tokens, toktypes, tokpre = self.get_vocab_base()
         self.gguf_writer.add_tokenizer_model("gpt2")
         self.gguf_writer.add_tokenizer_pre(tokpre)
-        self.gguf_writer.add_token_list(tokens)
-        self.gguf_writer.add_token_types(toktypes)
+        self.gguf_writer.add_tokenizer_vocab(tokens)
+        self.gguf_writer.add_tokenizer_token_type(toktypes)
 
         special_vocab = GGUFSpecialVocab(self.dir_model, load_merges=True)
         special_vocab.add_to_gguf(self.gguf_writer)
@@ -636,8 +635,8 @@ class Model:
 
         self.gguf_writer.add_tokenizer_model("gpt2")
         self.gguf_writer.add_tokenizer_pre(tokpre)
-        self.gguf_writer.add_token_list(tokens)
-        self.gguf_writer.add_token_types(toktypes)
+        self.gguf_writer.add_tokenizer_vocab(tokens)
+        self.gguf_writer.add_tokenizer_token_type(toktypes)
 
         special_vocab = GGUFSpecialVocab(dir_model, load_merges=False)
         special_vocab.merges = merges
@@ -723,9 +722,9 @@ class Model:
 
         self.gguf_writer.add_tokenizer_model("llama")
         self.gguf_writer.add_tokenizer_pre("default")
-        self.gguf_writer.add_token_list(tokens)
-        self.gguf_writer.add_token_scores(scores)
-        self.gguf_writer.add_token_types(toktypes)
+        self.gguf_writer.add_tokenizer_vocab(tokens)
+        self.gguf_writer.add_tokenizer_scores(scores)
+        self.gguf_writer.add_tokenizer_token_type(toktypes)
 
         special_vocab = GGUFSpecialVocab(self.dir_model, n_vocab=len(tokens))
         special_vocab.add_to_gguf(self.gguf_writer)
@@ -745,9 +744,9 @@ class Model:
 
         self.gguf_writer.add_tokenizer_model("llama")
         self.gguf_writer.add_tokenizer_pre("default")
-        self.gguf_writer.add_token_list(tokens)
-        self.gguf_writer.add_token_scores(scores)
-        self.gguf_writer.add_token_types(toktypes)
+        self.gguf_writer.add_tokenizer_vocab(tokens)
+        self.gguf_writer.add_tokenizer_scores(scores)
+        self.gguf_writer.add_tokenizer_token_type(toktypes)
 
         special_vocab = GGUFSpecialVocab(self.dir_model, n_vocab=len(tokens))
         special_vocab.add_to_gguf(self.gguf_writer)
@@ -1134,8 +1133,8 @@ class XverseModel(Model):
 
         self.gguf_writer.add_tokenizer_model("llama")
         self.gguf_writer.add_tokenizer_pre("default")
-        self.gguf_writer.add_token_list(tokens)
-        self.gguf_writer.add_token_types(toktypes)
+        self.gguf_writer.add_tokenizer_vocab(tokens)
+        self.gguf_writer.add_tokenizer_token_type(toktypes)
 
         special_vocab = GGUFSpecialVocab(dir_model, n_vocab=len(tokens))
         special_vocab.add_to_gguf(self.gguf_writer)
@@ -2101,9 +2100,9 @@ class Phi3MiniModel(Model):
 
         self.gguf_writer.add_tokenizer_model("llama")
         self.gguf_writer.add_tokenizer_pre("default")
-        self.gguf_writer.add_token_list(tokens)
-        self.gguf_writer.add_token_scores(scores)
-        self.gguf_writer.add_token_types(toktypes)
+        self.gguf_writer.add_tokenizer_vocab(tokens)
+        self.gguf_writer.add_tokenizer_scores(scores)
+        self.gguf_writer.add_tokenizer_token_type(toktypes)
 
         special_vocab = GGUFSpecialVocab(self.dir_model, n_vocab=len(tokens))
         special_vocab.add_to_gguf(self.gguf_writer)
@@ -2349,9 +2348,9 @@ class InternLM2Model(Model):
 
         self.gguf_writer.add_tokenizer_model("llama")
         self.gguf_writer.add_tokenizer_pre("default")
-        self.gguf_writer.add_token_list(tokens)
-        self.gguf_writer.add_token_scores(scores)
-        self.gguf_writer.add_token_types(toktypes)
+        self.gguf_writer.add_tokenizer_vocab(tokens)
+        self.gguf_writer.add_tokenizer_scores(scores)
+        self.gguf_writer.add_tokenizer_token_type(toktypes)
         self.gguf_writer.add_add_space_prefix(add_prefix)
 
         special_vocab = GGUFSpecialVocab(self.dir_model, n_vocab=len(tokens))
@@ -2501,8 +2500,8 @@ class BertModel(Model):
         # add vocab to gguf
         self.gguf_writer.add_tokenizer_model("bert")
         self.gguf_writer.add_tokenizer_pre(tokpre)
-        self.gguf_writer.add_token_list(tokens)
-        self.gguf_writer.add_token_types(toktypes)
+        self.gguf_writer.add_tokenizer_vocab(tokens)
+        self.gguf_writer.add_tokenizer_token_type(toktypes)
 
         # handle special tokens
         special_vocab = GGUFSpecialVocab(self.dir_model, n_vocab=len(tokens))
@@ -2656,19 +2655,19 @@ class MambaModel(Model):
 
             field = neox_reader.get_field(GGUFMetadataKeys.Tokenizer.LIST)
             assert field
-            self.gguf_writer.add_token_list(
+            self.gguf_writer.add_tokenizer_vocab(
                 [bytes(field.parts[i]) for i in field.data][:vocab_size]
             )
 
             field = neox_reader.get_field(GGUFMetadataKeys.Tokenizer.TOKEN_TYPE)
             assert field
-            self.gguf_writer.add_token_types(
+            self.gguf_writer.add_tokenizer_token_type(
                 [field.parts[i].tolist()[0] for i in field.data][:vocab_size]
             )
 
             field = neox_reader.get_field(GGUFMetadataKeys.Tokenizer.MERGES)
             assert field
-            self.gguf_writer.add_token_merges(
+            self.gguf_writer.add_tokenizer_merges(
                 [bytes(field.parts[i]) for i in field.data]
             )
 
@@ -2954,9 +2953,9 @@ class ArcticModel(Model):
 
         self.gguf_writer.add_tokenizer_model("llama")
         self.gguf_writer.add_tokenizer_pre("default")
-        self.gguf_writer.add_token_list(tokens)
-        self.gguf_writer.add_token_scores(scores)
-        self.gguf_writer.add_token_types(toktypes)
+        self.gguf_writer.add_tokenizer_vocab(tokens)
+        self.gguf_writer.add_tokenizer_scores(scores)
+        self.gguf_writer.add_tokenizer_token_type(toktypes)
 
         special_vocab = GGUFSpecialVocab(self.dir_model, n_vocab=len(tokens))
         special_vocab.add_to_gguf(self.gguf_writer)
