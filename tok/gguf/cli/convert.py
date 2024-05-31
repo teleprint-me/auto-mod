@@ -3150,19 +3150,6 @@ def main() -> None:
 
     dir_model = args.model
 
-    if args.use_awq:  # TODO
-        tmp_model_path = args.model / "weighted_model"
-        dir_model = tmp_model_path
-        if tmp_model_path.is_dir():
-            logger.info(f"{tmp_model_path} exists as a weighted model.")
-        else:
-            tmp_model_path.mkdir(parents=True, exist_ok=True)
-            logger.info("Saving new weighted model ...")
-            awq.add_scale_weights(  # NOTE: This is broken
-                str(args.model), str(args.awq_path), str(tmp_model_path)
-            )
-            logger.info(f"Saved weighted model at {tmp_model_path}.")
-
     if not dir_model.is_dir():
         logger.error(f"Error: {args.model} is not a directory")
         sys.exit(1)
