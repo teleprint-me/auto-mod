@@ -3017,8 +3017,9 @@ class ArcticModel(Model):
                 raise ValueError(f"Unprocessed experts: {experts}")
 
 
-###### CONVERSION LOGIC ######
-
+####################
+# CONVERSION LOGIC #
+####################
 
 # tree of lazy tensors
 class LazyTorchTensor(LazyBase):
