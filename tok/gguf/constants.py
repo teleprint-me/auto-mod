@@ -883,6 +883,14 @@ class GGUFFileType(IntEnum):
     GUESSED = 1024  # not specified in the model file
 
 
+GGUF_FILE_TYPE_MAP = {
+    "F32": GGUFFileType.ALL_F32,
+    "F16": GGUFFileType.MOSTLY_F16,
+    "BF16": GGUFFileType.MOSTLY_BF16,
+    "Q8_0": GGUFFileType.MOSTLY_Q8_0,
+}
+
+
 GGUF_FILE_TYPE_NAMES: dict[GGUFFileType, str] = {
     GGUFFileType.ALL_F32: "F32",
     GGUFFileType.MOSTLY_F16: "F16",
@@ -1035,9 +1043,11 @@ class ModelPreTokenizerType(Enum):
 #
 # HF Vocab Files
 #
-MODEL_TOKENIZER_BPE_FILES = (
+MODEL_TOKENIZER_BPE_FILES: tuple[str, ...] = (
     "config.json",
     "tokenizer_config.json",
     "tokenizer.json",
 )
-MODEL_TOKENIZER_SPM_FILES = MODEL_TOKENIZER_BPE_FILES + ("tokenizer.model",)
+MODEL_TOKENIZER_SPM_FILES: tuple[str, ...] = MODEL_TOKENIZER_BPE_FILES + (
+    "tokenizer.model",
+)
