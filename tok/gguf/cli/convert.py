@@ -37,6 +37,7 @@ from ..constants import (
     GGUF_MODEL_TENSOR,
     GGUF_MODEL_TENSORS,
     GGUF_TENSOR_NAMES,
+    GGUF_FILE_TYPE_MAP,
     GGUFEndian,
     GGUFFileType,
     GGUFMetadataKeys,
@@ -57,6 +58,7 @@ from ..reader import GGUFReader
 from ..tensor_mapping import TensorNameMap, get_tensor_name_map
 from ..vocab import GGUFSpecialVocab, LlamaHfVocab
 from ..writer import GGUFWriter
+from ..huggingface_hub import HFHubModel
 
 logger = logging.getLogger(__file__)
 
@@ -3142,57 +3144,54 @@ def main() -> None:
 
     logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO)
 
-    dir_model = args.model
+    logger.info(f"Using model path: {args.model_path}")
+    model_path = Path(args.model_path) / args.model_repo
+    model_path.mkdir(parents=True, exist_ok=True)
 
-    if not dir_model.is_dir():
-        logger.error(f"Error: {args.model} is not a directory")
-        sys.exit(1)
-
-    ftype_map: dict[str, GGUFFileType] = {
-        "f32": GGUFFileType.ALL_F32,
-        "f16": GGUFFileType.MOSTLY_F16,
-        "bf16": GGUFFileType.MOSTLY_BF16,
-        "q8_0": GGUFFileType.MOSTLY_Q8_0,
-        "auto": GGUFFileType.GUESSED,
-    }
-
-    if args.outfile is not None:
-        fname_out = args.outfile
+    logger.info(f"Using model repo: {args.model_repo}")
+    model_hub = HFHubModel(args.auth_token, args.model_path, logger)
+    if args.tokenizer_model:
+        model_hub.download_all_vocab_files(args.model_repo, args.tokenizer_type)
     else:
-        # output in the same directory as the model by default
-        fname_out = dir_model / "ggml-model-{ftype}.gguf"
+        model_hub.download_all_model_files(args.model_repo)
 
-    logger.info(f"Loading model: {dir_model.name}")
+    # resolve model precision
+    gguf_file_type = GGUF_FILE_TYPE_MAP.get(args.output_type, GGUFFileType.GUESSED)
+    logger.debug(f"Using GGUF file type: {gguf_file_type}")
 
-    hparams = Model.load_hparams(dir_model)
+    # Label output model file by precision type
+    gguf_file_path = model_path / f"ggml-model-{args.output_type}.gguf"
+    logger.debug(f"Using GGUF model: {gguf_file_path}")
 
     with torch.inference_mode():
-        model_class = Model.from_model_architecture(hparams["architectures"][0])
-        model_instance = model_class(
-            dir_model,
-            ftype_map[args.outtype],
-            fname_out,
+        logger.info(f"🔥 torching model: {model_path.name} 🔥")
+        architecture = model_hub.architecture(args.model_repo)
+        model_class = Model.from_model_architecture(architecture)
+        gguf_model = model_class(
+            model_path,
+            gguf_file_type,
+            gguf_file_path,
             args.bigendian,
             args.use_temp_file,
             args.no_lazy,
         )
 
         logger.info("Set model parameters")
-        model_instance.set_gguf_parameters()
+        gguf_model.set_gguf_parameters()
 
         logger.info("Set model tokenizer")
-        model_instance.set_vocab()
+        gguf_model.set_vocab()
 
-        model_instance.gguf_writer.add_quantization_version(GGML_QUANT_VERSION)
+        gguf_model.gguf_writer.add_quantization_version(GGML_QUANT_VERSION)
 
         if args.vocab_only:
-            logger.info(f"Exporting model vocab to '{model_instance.fname_out}'")
-            model_instance.write_vocab()
+            logger.info(f"Exporting model vocab to '{gguf_model.fname_out}'")
+            gguf_model.write_vocab()
         else:
-            logger.info(f"Exporting model to '{model_instance.fname_out}'")
-            model_instance.write()
+            logger.info(f"Exporting model to '{gguf_model.fname_out}'")
+            gguf_model.write()
 
-        logger.info(f"Model successfully exported to '{model_instance.fname_out}'")
+        logger.info(f"Model successfully exported to '{gguf_model.fname_out}'")
 
 
 if __name__ == "__main__":
