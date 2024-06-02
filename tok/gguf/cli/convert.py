@@ -38,6 +38,7 @@ from ..constants import (
     GGUF_MODEL_TENSORS,
     GGUF_TENSOR_NAMES,
     GGUF_FILE_TYPE_MAP,
+    GGUFPoolingType,
     GGUFEndian,
     GGUFFileType,
     GGUFMetadataKeys,
@@ -530,7 +531,7 @@ class Model:
     #       do not modify it manually!
     # ref:  https://github.com/ggerganov/llama.cpp/pull/6920
     # Marker: Start get_vocab_base_pre
-    def get_vocab_base_pre(self, tokenizer) -> str:
+    def get_vocab_base_pre(self, tokenizer: AutoTokenizer) -> str:
         with open(f"{tokenizer.name_or_path}/tokenizer.json", mode="r") as fp:
             tokenizer_json = json.load(fp)
         checksum = sha256(str(tokenizer_json).encode()).hexdigest()
@@ -545,18 +546,21 @@ class Model:
             models = json.load(fp)
         for model in models:
             if checksum == model["vocab_hash"]:
-                pre = None
+                tokenizer_type = None
                 if model["vocab_type"] == HFTokenizerType.BPE.value:
-                    pre = "bpe"
-                elif model["vocab_type"] == HFTokenizerType.SPM.value:
-                    pre = "spm"
+                    tokenizer_type = HFTokenizerType.BPE.value
                 elif model["vocab_type"] == HFTokenizerType.WPM.value:
-                    pre = "wpm"
+                    tokenizer_type = HFTokenizerType.WPM.value
+                elif model["vocab_type"] == HFTokenizerType.SPM.value:
+                    tokenizer_type = HFTokenizerType.SPM.value
                 else:
-                    raise KeyError()
-                logger.debug(f"tokenizer checksum: {checksum}")
-                logger.debug(f"tokenizer.ggml.pre: {pre}")
-                return pre  # NOTE: Use the enum to id the vocab
+                    raise ValueError(
+                        f"Invalid tokenizer type detected: {tokenizer_type}"
+                    )
+                logger.info(f"tokenizer.type = {tokenizer_type}")
+                logger.info(f"Tokenizer Checksum: {checksum}")
+                self.gguf_writer.add_tokenizer_type(tokenizer_type)
+                return tokenizer_type  # NOTE: Use the enum to id the vocab
 
         logger.warning("\n")
         logger.warning(
@@ -586,7 +590,6 @@ class Model:
     def _set_vocab_gpt2(self) -> None:
         tokens, toktypes, tokpre = self.get_vocab_base()
         self.gguf_writer.add_tokenizer_model("gpt2")
-        self.gguf_writer.add_tokenizer_pre(tokpre)
         self.gguf_writer.add_tokenizer_vocab(tokens)
         self.gguf_writer.add_tokenizer_token_type(toktypes)
 
@@ -634,7 +637,6 @@ class Model:
                 toktypes.append(GGUFTokenType.NORMAL)
 
         self.gguf_writer.add_tokenizer_model("gpt2")
-        self.gguf_writer.add_tokenizer_pre(tokpre)
         self.gguf_writer.add_tokenizer_vocab(tokens)
         self.gguf_writer.add_tokenizer_token_type(toktypes)
 
@@ -719,7 +721,6 @@ class Model:
                 toktypes.append(GGUFTokenType.UNUSED)
 
         self.gguf_writer.add_tokenizer_model("llama")
-        self.gguf_writer.add_tokenizer_pre("default")
         self.gguf_writer.add_tokenizer_vocab(tokens)
         self.gguf_writer.add_tokenizer_scores(scores)
         self.gguf_writer.add_tokenizer_token_type(toktypes)
@@ -741,7 +742,6 @@ class Model:
         assert len(tokens) == vocab.vocab_size
 
         self.gguf_writer.add_tokenizer_model("llama")
-        self.gguf_writer.add_tokenizer_pre("default")
         self.gguf_writer.add_tokenizer_vocab(tokens)
         self.gguf_writer.add_tokenizer_scores(scores)
         self.gguf_writer.add_tokenizer_token_type(toktypes)
@@ -1128,7 +1128,6 @@ class XverseModel(Model):
             toktypes.append(toktype)
 
         self.gguf_writer.add_tokenizer_model("llama")
-        self.gguf_writer.add_tokenizer_pre("default")
         self.gguf_writer.add_tokenizer_vocab(tokens)
         self.gguf_writer.add_tokenizer_token_type(toktypes)
 
@@ -2093,7 +2092,6 @@ class Phi3MiniModel(Model):
                         toktypes[token_id] = GGUFTokenType.CONTROL
 
         self.gguf_writer.add_tokenizer_model("llama")
-        self.gguf_writer.add_tokenizer_pre("default")
         self.gguf_writer.add_tokenizer_vocab(tokens)
         self.gguf_writer.add_tokenizer_scores(scores)
         self.gguf_writer.add_tokenizer_token_type(toktypes)
@@ -2340,7 +2338,6 @@ class InternLM2Model(Model):
                     toktypes.append(GGUFTokenType.USER_DEFINED)
 
         self.gguf_writer.add_tokenizer_model("llama")
-        self.gguf_writer.add_tokenizer_pre("default")
         self.gguf_writer.add_tokenizer_vocab(tokens)
         self.gguf_writer.add_tokenizer_scores(scores)
         self.gguf_writer.add_tokenizer_token_type(toktypes)
@@ -2465,9 +2462,9 @@ class BertModel(Model):
             ) as f:
                 pooling = json.load(f)
             if pooling["pooling_mode_mean_tokens"]:
-                pooling_type = PoolingType.MEAN
+                pooling_type = GGUFPoolingType.MEAN
             elif pooling["pooling_mode_cls_token"]:
-                pooling_type = PoolingType.CLS
+                pooling_type = GGUFPoolingType.CLS
             else:
                 raise NotImplementedError("Only MEAN and CLS pooling types supported")
             self.gguf_writer.add_pooling_type(pooling_type)
@@ -2492,7 +2489,6 @@ class BertModel(Model):
 
         # add vocab to gguf
         self.gguf_writer.add_tokenizer_model("bert")
-        self.gguf_writer.add_tokenizer_pre(tokpre)
         self.gguf_writer.add_tokenizer_vocab(tokens)
         self.gguf_writer.add_tokenizer_token_type(toktypes)
 
@@ -2642,7 +2638,7 @@ class MambaModel(Model):
             )
 
             field = neox_reader.get_field(GGUFMetadataKeys.Tokenizer.PRE)
-            self.gguf_writer.add_tokenizer_pre(
+            self.gguf_writer.add_tokenizer_type(
                 bytes(field.parts[-1]).decode("utf-8") if field else "mpt"
             )
 
@@ -2943,7 +2939,6 @@ class ArcticModel(Model):
                         scores[token_id] = token_score
 
         self.gguf_writer.add_tokenizer_model("llama")
-        self.gguf_writer.add_tokenizer_pre("default")
         self.gguf_writer.add_tokenizer_vocab(tokens)
         self.gguf_writer.add_tokenizer_scores(scores)
         self.gguf_writer.add_tokenizer_token_type(toktypes)
@@ -3151,7 +3146,7 @@ def main() -> None:
     logger.info(f"Using model repo: {args.model_repo}")
     model_hub = HFHubModel(args.auth_token, args.model_path, logger)
     if args.tokenizer_model:
-        model_hub.download_model_tokenizers(args.model_repo, args.tokenizer_type)
+        model_hub.download_model_tokenizers(args.model_repo)
     else:
         model_hub.download_model_weights_and_tokenizers(args.model_repo)
 
