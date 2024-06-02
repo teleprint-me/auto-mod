@@ -1031,6 +1031,19 @@ GGUF_QUANT_SIZES: dict[GGUFQuantizationType, tuple[int, int]] = {
 
 
 #
+# Model File Types
+#
+class ModelFileExtension(Enum):
+    PT = ".pt"  # torch
+    PTH = ".pth"  # torch
+    BIN = ".bin"  # torch
+    SAFETENSORS = ".safetensors"  # safetensors
+    JSON = ".json"  # transformers/tokenizers
+    MODEL = ".model"  # sentencepiece
+    GGUF = ".gguf"  # ggml/llama.cpp
+
+
+#
 # Tokenizer Types
 #
 class GGUFTokenType(IntEnum):
@@ -1073,9 +1086,10 @@ class HFPreTokenizerType(Enum):
 #
 # HF Vocab Files
 #
-HF_TOKENIZER_FILES: tuple[str, ...] = (
+HF_TOKENIZER_BPE_FILES = (
     "config.json",
     "tokenizer_config.json",
     "tokenizer.json",
-    "tokenizer.model",
 )
+
+HF_TOKENIZER_SPM_FILES: tuple[str, ...] = HF_TOKENIZER_BPE_FILES + ("tokenizer.model",)
