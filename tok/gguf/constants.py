@@ -32,6 +32,7 @@ class GGUFMetadataKeys:
         SOURCE_URL = "general.source.url"
         SOURCE_REPO = "general.source.repository"
         FILE_TYPE = "general.file_type"
+        ENDIANESS = "general.endianess"  # little or big
 
     class LLM:
         VOCAB_SIZE = "{arch}.vocab_size"
@@ -86,7 +87,7 @@ class GGUFMetadataKeys:
         BOS_ID = "tokenizer.bos_token_id"
         EOS_ID = "tokenizer.eos_token_id"
         UNK_ID = "tokenizer.unknown_token_id"
-        SEP_ID = "tokenizer.seperator_token_id"
+        SEP_ID = "tokenizer.separator_token_id"
         PAD_ID = "tokenizer.padding_token_id"
         CLS_ID = "tokenizer.cls_token_id"
         MASK_ID = "tokenizer.mask_token_id"
