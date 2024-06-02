@@ -3,6 +3,7 @@ import logging
 import os
 import pathlib
 from hashlib import sha256
+from typing import Protocol
 
 import requests
 from sentencepiece import SentencePieceProcessor
@@ -19,7 +20,7 @@ from .constants import (
 )
 
 
-class HFHubBase:
+class HFHubBase(Protocol):
     def __init__(
         self,
         model_path: None | str | pathlib.Path,
