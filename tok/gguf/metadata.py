@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import json
-import frontmatter
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
-from dataclasses import dataclass
+
+import frontmatter
+
 from .constants import GGUFMetadataKeys
 
 
