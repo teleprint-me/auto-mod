@@ -105,46 +105,6 @@ class GGUFMetadataKeys:
         EOT_ID = "tokenizer.eot_token_id"
 
 
-@dataclass
-class GGUFMetadata:
-    name: Optional[str] = None
-    basename: Optional[str] = None
-    finetune: Optional[str] = None
-    author: Optional[str] = None
-    version: Optional[str] = None
-    url: Optional[str] = None
-    description: Optional[str] = None
-    licence: Optional[str] = None
-    source_url: Optional[str] = None
-    source_hf_repo: Optional[str] = None
-
-    @staticmethod
-    def load(metadata_path: Path) -> GGUFMetadata:
-        if metadata_path is None or not metadata_path.exists():
-            return GGUFMetadata()
-
-        with open(metadata_path, "r") as file:
-            data = json.load(file)
-
-        # Create a new Metadata instance
-        metadata = GGUFMetadata()
-
-        # Assigning values to Metadata attributes if they exist in the JSON file
-        # This is based on LLM_KV_NAMES mapping in llama.cpp
-        metadata.name = data.get("general.name")
-        metadata.basename = data.get("general.basename")
-        metadata.finetune = data.get("general.finetune")
-        metadata.author = data.get("general.author")
-        metadata.version = data.get("general.version")
-        metadata.url = data.get("general.url")
-        metadata.description = data.get("general.description")
-        metadata.license = data.get("general.license")
-        metadata.source_url = data.get("general.source.url")
-        metadata.source_hf_repo = data.get("general.source.huggingface.repository")
-
-        return metadata
-
-
 #
 # recommended mapping of model tensor names for storage in gguf
 #
