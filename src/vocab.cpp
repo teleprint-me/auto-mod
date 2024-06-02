@@ -403,28 +403,28 @@ struct LLM_KV {
 };
 
 enum gguf_vocab_type {
-    GGUF_VOCAB_TYPE_NONE = 0, // Models has no vocab
-    GGUF_VOCAB_TYPE_SPM  = 1, // Tokenizer Byte Level BPE with byte fallback
-    GGUF_VOCAB_TYPE_BPE  = 2, // GPT-2 tokenizer Byte Level BPE
-    GGUF_VOCAB_TYPE_WPM  = 3, // BERT tokenizer Byte Level WordPiece
+    GGUF_VOCAB_TYPE_NONE, // Models has no vocab
+    GGUF_VOCAB_TYPE_SPM,  // Tokenizer Byte Level BPE with byte fallback
+    GGUF_VOCAB_TYPE_BPE,  // GPT-2 tokenizer Byte Level BPE
+    GGUF_VOCAB_TYPE_WPM,  // BERT tokenizer Byte Level WordPiece
 };
 
 enum gguf_token_type {
-    GGUF_TOKEN_TYPE_UNDEFINED    = 0,
-    GGUF_TOKEN_TYPE_NORMAL       = 1,
-    GGUF_TOKEN_TYPE_UNKNOWN      = 2,
-    GGUF_TOKEN_TYPE_CONTROL      = 3,
-    GGUF_TOKEN_TYPE_USER_DEFINED = 4,
-    GGUF_TOKEN_TYPE_UNUSED       = 5,
-    GGUF_TOKEN_TYPE_BYTE         = 6,
+    GGUF_TOKEN_TYPE_UNDEFINED,
+    GGUF_TOKEN_TYPE_NORMAL,
+    GGUF_TOKEN_TYPE_UNKNOWN,
+    GGUF_TOKEN_TYPE_CONTROL,
+    GGUF_TOKEN_TYPE_USER_DEFINED,
+    GGUF_TOKEN_TYPE_UNUSED,
+    GGUF_TOKEN_TYPE_BYTE,
 };
 
 enum gguf_token_flags {
-    GGUF_TOKEN_FLAG_SPECIAL     = 0,
-    GGUF_TOKEN_FLAG_NORMALIZED  = 1,
-    GGUF_TOKEN_FLAG_LSTRIP      = 2,
-    GGUF_TOKEN_FLAG_RSTRIP      = 3,
-    GGUF_TOKEN_FLAG_SINGLE_WORD = 4,
+    GGUF_TOKEN_FLAG_SPECIAL,
+    GGUF_TOKEN_FLAG_NORMALIZED,
+    GGUF_TOKEN_FLAG_LSTRIP,
+    GGUF_TOKEN_FLAG_RSTRIP,
+    GGUF_TOKEN_FLAG_SINGLE_WORD,
 };
 
 struct gguf_vocab {
