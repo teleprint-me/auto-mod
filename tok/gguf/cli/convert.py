@@ -43,8 +43,8 @@ from ..constants import (
     GGUFMetadataKeys,
     GGUFQuantizationType,
     GGUFRopeScalingType,
-    ModelTokenizerType,
-    ModelTokenType,
+    HFTokenizerType,
+    GGUFTokenType,
 )
 from ..lazy import LazyBase, LazyNumpyTensor
 from ..quants import (
@@ -513,16 +513,16 @@ class Model:
         for i in range(vocab_size):
             if i not in reverse_vocab:
                 tokens.append(f"[PAD{i}]")
-                toktypes.append(ModelTokenType.USER_DEFINED)
+                toktypes.append(GGUFTokenType.USER_DEFINED)
             elif reverse_vocab[i] in added_vocab:
                 tokens.append(reverse_vocab[i])
                 if tokenizer.added_tokens_decoder[i].special:
-                    toktypes.append(ModelTokenType.CONTROL)
+                    toktypes.append(GGUFTokenType.CONTROL)
                 else:
-                    toktypes.append(ModelTokenType.USER_DEFINED)
+                    toktypes.append(GGUFTokenType.USER_DEFINED)
             else:
                 tokens.append(reverse_vocab[i])
-                toktypes.append(ModelTokenType.NORMAL)
+                toktypes.append(GGUFTokenType.NORMAL)
 
         return tokens, toktypes, tokpre
 
@@ -546,11 +546,11 @@ class Model:
         for model in models:
             if checksum == model["vocab_hash"]:
                 pre = None
-                if model["vocab_type"] == ModelTokenizerType.BPE.value:
+                if model["vocab_type"] == HFTokenizerType.BPE.value:
                     pre = "bpe"
-                elif model["vocab_type"] == ModelTokenizerType.SPM.value:
+                elif model["vocab_type"] == HFTokenizerType.SPM.value:
                     pre = "spm"
-                elif model["vocab_type"] == ModelTokenizerType.WPM.value:
+                elif model["vocab_type"] == HFTokenizerType.WPM.value:
                     pre = "wpm"
                 else:
                     raise KeyError()
@@ -625,13 +625,13 @@ class Model:
         for i in range(vocab_size):
             if i not in reverse_vocab:
                 tokens.append(f"[PAD{i}]")
-                toktypes.append(ModelTokenType.USER_DEFINED)
+                toktypes.append(GGUFTokenType.USER_DEFINED)
             elif reverse_vocab[i] in added_vocab:
                 tokens.append(reverse_vocab[i])
-                toktypes.append(ModelTokenType.CONTROL)
+                toktypes.append(GGUFTokenType.CONTROL)
             else:
                 tokens.append(reverse_vocab[i])
-                toktypes.append(ModelTokenType.NORMAL)
+                toktypes.append(GGUFTokenType.NORMAL)
 
         self.gguf_writer.add_tokenizer_model("gpt2")
         self.gguf_writer.add_tokenizer_pre(tokpre)
@@ -671,22 +671,22 @@ class Model:
 
         tokens: list[bytes] = [f"[PAD{i}]".encode("utf-8") for i in range(vocab_size)]
         scores: list[float] = [-10000.0] * vocab_size
-        toktypes: list[int] = [ModelTokenType.UNKNOWN] * vocab_size
+        toktypes: list[int] = [GGUFTokenType.UNKNOWN] * vocab_size
 
         for token_id in range(tokenizer.vocab_size()):
             piece = tokenizer.IdToPiece(token_id)
             text = piece.encode("utf-8")
             score = tokenizer.GetScore(token_id)
 
-            toktype = ModelTokenType.NORMAL
+            toktype = GGUFTokenType.NORMAL
             if tokenizer.IsUnknown(token_id):
-                toktype = ModelTokenType.UNKNOWN
+                toktype = GGUFTokenType.UNKNOWN
             elif tokenizer.IsControl(token_id):
-                toktype = ModelTokenType.CONTROL
+                toktype = GGUFTokenType.CONTROL
             elif tokenizer.IsUnused(token_id):
-                toktype = ModelTokenType.UNUSED
+                toktype = GGUFTokenType.UNUSED
             elif tokenizer.IsByte(token_id):
-                toktype = ModelTokenType.BYTE
+                toktype = GGUFTokenType.BYTE
 
             tokens[token_id] = text
             scores[token_id] = score
@@ -706,7 +706,7 @@ class Model:
 
                     tokens[token_id] = key.encode("utf-8")
                     scores[token_id] = -1000.0
-                    toktypes[token_id] = ModelTokenType.USER_DEFINED
+                    toktypes[token_id] = GGUFTokenType.USER_DEFINED
 
         if vocab_size > len(tokens):
             pad_count = vocab_size - len(tokens)
@@ -716,7 +716,7 @@ class Model:
             for i in range(1, pad_count + 1):
                 tokens.append(bytes(f"[PAD{i}]", encoding="utf-8"))
                 scores.append(-1000.0)
-                toktypes.append(ModelTokenType.UNUSED)
+                toktypes.append(GGUFTokenType.UNUSED)
 
         self.gguf_writer.add_tokenizer_model("llama")
         self.gguf_writer.add_tokenizer_pre("default")
@@ -1112,17 +1112,17 @@ class XverseModel(Model):
             token_text = reverse_vocab[token_id].encode("utf-8")
             # replace "\x00" to string with length > 0
             if token_text == b"\x00":
-                toktype = ModelTokenType.BYTE  # special
+                toktype = GGUFTokenType.BYTE  # special
                 token_text = f"<{token_text}>".encode("utf-8")
             elif re.fullmatch(rb"<0x[0-9A-Fa-f]{2}>", token_text):
-                toktype = ModelTokenType.BYTE  # special
+                toktype = GGUFTokenType.BYTE  # special
             elif reverse_vocab[token_id] in added_vocab:
                 if tokenizer.added_tokens_decoder[token_id].special:
-                    toktype = ModelTokenType.CONTROL
+                    toktype = GGUFTokenType.CONTROL
                 else:
-                    toktype = ModelTokenType.USER_DEFINED
+                    toktype = GGUFTokenType.USER_DEFINED
             else:
-                toktype = ModelTokenType.NORMAL
+                toktype = GGUFTokenType.NORMAL
 
             tokens.append(token_text)
             toktypes.append(toktype)
@@ -2019,7 +2019,7 @@ class Phi3MiniModel(Model):
 
         tokens: list[bytes] = [f"[PAD{i}]".encode("utf-8") for i in range(vocab_size)]
         scores: list[float] = [-10000.0] * vocab_size
-        toktypes: list[int] = [ModelTokenType.UNKNOWN] * vocab_size
+        toktypes: list[int] = [GGUFTokenType.UNKNOWN] * vocab_size
 
         for token_id in range(tokenizer.vocab_size()):
 
@@ -2027,15 +2027,15 @@ class Phi3MiniModel(Model):
             text = piece.encode("utf-8")
             score = tokenizer.GetScore(token_id)
 
-            toktype = ModelTokenType.NORMAL
+            toktype = GGUFTokenType.NORMAL
             if tokenizer.IsUnknown(token_id):
-                toktype = ModelTokenType.UNKNOWN
+                toktype = GGUFTokenType.UNKNOWN
             elif tokenizer.IsControl(token_id):
-                toktype = ModelTokenType.CONTROL
+                toktype = GGUFTokenType.CONTROL
             elif tokenizer.IsUnused(token_id):
-                toktype = ModelTokenType.UNUSED
+                toktype = GGUFTokenType.UNUSED
             elif tokenizer.IsByte(token_id):
-                toktype = ModelTokenType.BYTE
+                toktype = GGUFTokenType.BYTE
 
             tokens[token_id] = text
             scores[token_id] = score
@@ -2056,7 +2056,7 @@ class Phi3MiniModel(Model):
 
                     tokens[token_id] = key.encode("utf-8")
                     scores[token_id] = -1000.0
-                    toktypes[token_id] = ModelTokenType.USER_DEFINED
+                    toktypes[token_id] = GGUFTokenType.USER_DEFINED
 
         tokenizer_config_file = self.dir_model / "tokenizer_config.json"
         if tokenizer_config_file.is_file():
@@ -2068,13 +2068,13 @@ class Phi3MiniModel(Model):
                 for token_id, foken_data in added_tokens_decoder.items():
                     token_id = int(token_id)
                     token = foken_data["content"].encode("utf-8")
-                    if toktypes[token_id] != ModelTokenType.UNKNOWN:
+                    if toktypes[token_id] != GGUFTokenType.UNKNOWN:
                         assert tokens[token_id] == token
                     tokens[token_id] = token
                     scores[token_id] = -1000.0
-                    toktypes[token_id] = ModelTokenType.USER_DEFINED
+                    toktypes[token_id] = GGUFTokenType.USER_DEFINED
                     if foken_data.get("special"):
-                        toktypes[token_id] = ModelTokenType.CONTROL
+                        toktypes[token_id] = GGUFTokenType.CONTROL
 
         tokenizer_file = self.dir_model / "tokenizer.json"
         if tokenizer_file.is_file():
@@ -2084,13 +2084,13 @@ class Phi3MiniModel(Model):
                 for foken_data in added_tokens:
                     token_id = int(foken_data["id"])
                     token = foken_data["content"].encode("utf-8")
-                    if toktypes[token_id] != ModelTokenType.UNKNOWN:
+                    if toktypes[token_id] != GGUFTokenType.UNKNOWN:
                         assert tokens[token_id] == token
                     tokens[token_id] = token
                     scores[token_id] = -1000.0
-                    toktypes[token_id] = ModelTokenType.USER_DEFINED
+                    toktypes[token_id] = GGUFTokenType.USER_DEFINED
                     if foken_data.get("special"):
-                        toktypes[token_id] = ModelTokenType.CONTROL
+                        toktypes[token_id] = GGUFTokenType.CONTROL
 
         self.gguf_writer.add_tokenizer_model("llama")
         self.gguf_writer.add_tokenizer_pre("default")
@@ -2315,15 +2315,15 @@ class InternLM2Model(Model):
                 logger.warning(f"InternLM2 convert token '{text}' to '🐉'!")
                 text = "🐉".encode("utf-8")
 
-            toktype = ModelTokenType.NORMAL
+            toktype = GGUFTokenType.NORMAL
             if tokenizer.IsUnknown(token_id):
-                toktype = ModelTokenType.UNKNOWN
+                toktype = GGUFTokenType.UNKNOWN
             elif tokenizer.IsControl(token_id):
-                toktype = ModelTokenType.CONTROL
+                toktype = GGUFTokenType.CONTROL
             elif tokenizer.IsUnused(token_id):
-                toktype = ModelTokenType.UNUSED
+                toktype = GGUFTokenType.UNUSED
             elif tokenizer.IsByte(token_id):
-                toktype = ModelTokenType.BYTE
+                toktype = GGUFTokenType.BYTE
 
             tokens.append(text)
             scores.append(score)
@@ -2337,7 +2337,7 @@ class InternLM2Model(Model):
                 for key in added_tokens_json:
                     tokens.append(key.encode("utf-8"))
                     scores.append(-1000.0)
-                    toktypes.append(ModelTokenType.USER_DEFINED)
+                    toktypes.append(GGUFTokenType.USER_DEFINED)
 
         self.gguf_writer.add_tokenizer_model("llama")
         self.gguf_writer.add_tokenizer_pre("default")
@@ -2883,7 +2883,7 @@ class ArcticModel(Model):
 
         tokens: list[bytes] = [f"[PAD{i}]".encode("utf-8") for i in range(vocab_size)]
         scores: list[float] = [-10000.0] * vocab_size
-        toktypes: list[int] = [ModelTokenType.UNKNOWN] * vocab_size
+        toktypes: list[int] = [GGUFTokenType.UNKNOWN] * vocab_size
 
         for token_id in range(tokenizer.vocab_size()):
 
@@ -2891,15 +2891,15 @@ class ArcticModel(Model):
             text = piece.encode("utf-8")
             score = tokenizer.GetScore(token_id)
 
-            toktype = ModelTokenType.NORMAL
+            toktype = GGUFTokenType.NORMAL
             if tokenizer.IsUnknown(token_id):
-                toktype = ModelTokenType.UNKNOWN
+                toktype = GGUFTokenType.UNKNOWN
             elif tokenizer.IsControl(token_id):
-                toktype = ModelTokenType.CONTROL
+                toktype = GGUFTokenType.CONTROL
             elif tokenizer.IsUnused(token_id):
-                toktype = ModelTokenType.UNUSED
+                toktype = GGUFTokenType.UNUSED
             elif tokenizer.IsByte(token_id):
-                toktype = ModelTokenType.BYTE
+                toktype = GGUFTokenType.BYTE
 
             tokens[token_id] = text
             scores[token_id] = score
@@ -2923,16 +2923,16 @@ class ArcticModel(Model):
                             continue
 
                         token_content = token_json["content"]
-                        token_type = ModelTokenType.USER_DEFINED
+                        token_type = GGUFTokenType.USER_DEFINED
                         token_score = -10000.0
 
                         # Map unk_token to UNKNOWN, other special tokens to CONTROL
                         # Set the score to 0.0 as in the original tokenizer.model
                         if ("special" in token_json) and token_json["special"]:
                             if token_content == tokenizer_config_json["unk_token"]:
-                                token_type = ModelTokenType.UNKNOWN
+                                token_type = GGUFTokenType.UNKNOWN
                             else:
-                                token_type = ModelTokenType.CONTROL
+                                token_type = GGUFTokenType.CONTROL
                             token_score = 0.0
 
                         logger.info(
@@ -3151,12 +3151,14 @@ def main() -> None:
     logger.info(f"Using model repo: {args.model_repo}")
     model_hub = HFHubModel(args.auth_token, args.model_path, logger)
     if args.tokenizer_model:
-        model_hub.download_all_vocab_files(args.model_repo, args.tokenizer_type)
+        model_hub.download_model_tokenizers(args.model_repo, args.tokenizer_type)
     else:
-        model_hub.download_all_model_files(args.model_repo)
+        model_hub.download_model_weights_and_tokenizers(args.model_repo)
 
     # resolve model precision
-    gguf_file_type = GGUF_FILE_TYPE_MAP.get(args.output_type.upper(), GGUFFileType.GUESSED)
+    gguf_file_type = GGUF_FILE_TYPE_MAP.get(
+        args.output_type.upper(), GGUFFileType.GUESSED
+    )
     logger.debug(f"Using GGUF file type: {gguf_file_type}")
 
     # Label output model file by precision type
@@ -3171,7 +3173,7 @@ def main() -> None:
             model_path,
             gguf_file_type,
             gguf_file_path,
-            args.bigendian,
+            args.big_endian,
             args.use_temp_file,
             args.no_lazy,
         )
@@ -3184,7 +3186,7 @@ def main() -> None:
 
         gguf_model.gguf_writer.add_quantization_version(GGML_QUANT_VERSION)
 
-        if args.vocab_only:
+        if args.tokenizer_model:
             logger.info(f"Exporting model vocab to '{gguf_model.fname_out}'")
             gguf_model.write_vocab()
         else:
