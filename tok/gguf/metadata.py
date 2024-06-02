@@ -5,7 +5,7 @@ import frontmatter
 from pathlib import Path
 from typing import Optional
 from dataclasses import dataclass
-from .constants import Keys
+from .constants import GGUFMetadataKeys
 
 
 @dataclass
@@ -91,58 +91,58 @@ class Metadata:
         # This is based on LLM_KV_NAMES mapping in llama.cpp
         metadata_override = Metadata.load_metadata_override(metadata_override_path)
         metadata.name = metadata_override.get(
-            Keys.General.NAME, metadata.name
+            GGUFMetadataKeys.General.NAME, metadata.name
         )  # noqa: E202
         metadata.basename = metadata_override.get(
-            Keys.General.BASENAME, metadata.basename
+            GGUFMetadataKeys.General.BASENAME, metadata.basename
         )  # noqa: E202
         metadata.finetune = metadata_override.get(
-            Keys.General.FINETUNE, metadata.finetune
+            GGUFMetadataKeys.General.FINETUNE, metadata.finetune
         )  # noqa: E202
         metadata.author = metadata_override.get(
-            Keys.General.AUTHOR, metadata.author
+            GGUFMetadataKeys.General.AUTHOR, metadata.author
         )  # noqa: E202
         metadata.organization = metadata_override.get(
-            Keys.General.ORGANIZATION, metadata.organization
+            GGUFMetadataKeys.General.ORGANIZATION, metadata.organization
         )  # noqa: E202
         metadata.version = metadata_override.get(
-            Keys.General.VERSION, metadata.version
+            GGUFMetadataKeys.General.VERSION, metadata.version
         )  # noqa: E202
         metadata.base_version = metadata_override.get(
-            Keys.General.BASE_VERSION, metadata.base_version
+            GGUFMetadataKeys.General.BASE_VERSION, metadata.base_version
         )  # noqa: E202
         metadata.url = metadata_override.get(
-            Keys.General.URL, metadata.url
+            GGUFMetadataKeys.General.URL, metadata.url
         )  # noqa: E202
         metadata.description = metadata_override.get(
-            Keys.General.DESCRIPTION, metadata.description
+            GGUFMetadataKeys.General.DESCRIPTION, metadata.description
         )  # noqa: E202
         metadata.license = metadata_override.get(
-            Keys.General.LICENSE, metadata.license
+            GGUFMetadataKeys.General.LICENSE, metadata.license
         )  # noqa: E202
         metadata.license_name = metadata_override.get(
-            Keys.General.LICENSE_NAME, metadata.license_name
+            GGUFMetadataKeys.General.LICENSE_NAME, metadata.license_name
         )  # noqa: E202
         metadata.license_link = metadata_override.get(
-            Keys.General.LICENSE_LINK, metadata.license_link
+            GGUFMetadataKeys.General.LICENSE_LINK, metadata.license_link
         )  # noqa: E202
         metadata.source_url = metadata_override.get(
-            Keys.General.SOURCE_URL, metadata.source_url
+            GGUFMetadataKeys.General.SOURCE_URL, metadata.source_url
         )  # noqa: E202
         metadata.source_hf_repo = metadata_override.get(
-            Keys.General.SOURCE_HF_REPO, metadata.source_hf_repo
+            GGUFMetadataKeys.General.SOURCE_HF_REPO, metadata.source_hf_repo
         )  # noqa: E202
         metadata.parameter_size_class = metadata_override.get(
-            Keys.General.PARAMETER_SIZE_CLASS, metadata.parameter_size_class
+            GGUFMetadataKeys.General.PARAMETER_SIZE_CLASS, metadata.parameter_size_class
         )  # noqa: E202
         metadata.tags = metadata_override.get(
-            Keys.General.TAGS, metadata.tags
+            GGUFMetadataKeys.General.TAGS, metadata.tags
         )  # noqa: E202
         metadata.language = metadata_override.get(
-            Keys.General.LANGUAGE, metadata.language
+            GGUFMetadataKeys.General.LANGUAGE, metadata.language
         )  # noqa: E202
         metadata.datasets = metadata_override.get(
-            Keys.General.datasets, metadata.datasets
+            GGUFMetadataKeys.General.datasets, metadata.datasets
         )  # noqa: E202
 
         # Direct Metadata Override (via direct cli argument)
