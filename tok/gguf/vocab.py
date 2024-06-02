@@ -16,6 +16,7 @@ from typing import (
     runtime_checkable,
 )
 
+from transformers import AutoTokenizer
 from .constants import GGUFTokenType
 from .writer import GGUFWriter
 from sentencepiece import SentencePieceProcessor
@@ -411,14 +412,6 @@ class LlamaHfVocab(GGUFVocab):
             or tokenizer_json["decoder"]["type"] != "Sequence"
         ):
             raise FileNotFoundError("Cannot find Llama BPE tokenizer")
-
-        try:
-            from transformers import AutoTokenizer
-        except ImportError as e:
-            raise ImportError(
-                "To use LlamaHfVocab, please install the `transformers` package. "
-                "You can install it with `pip install transformers`."
-            ) from e
 
         # Allow the tokenizer to default to slow or fast versions.
         # Explicitly set tokenizer to use local paths.
