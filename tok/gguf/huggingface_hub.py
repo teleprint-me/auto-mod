@@ -11,7 +11,6 @@ from tqdm import tqdm
 
 from .constants import (
     HF_TOKENIZER_FILES,
-    HFFileExtension,
     HFTokenizerType,
 )
 
@@ -114,18 +113,20 @@ class HFHubRequest(HFHubBase):
         # Return the cached file listing
         return self._model_files
 
-    def list_filtered_remote_files(self, model_repo: str, suffix: str) -> list[str]:
+    def list_filtered_remote_files(
+        self, model_repo: str, file_suffix: str
+    ) -> list[str]:
         model_files = []
-        self.logger.debug(f"Repo:{model_repo}")
-        self.logger.debug(f"FileExtension:{suffix}")
+        self.logger.debug(f"Model Repo:{model_repo}")
+        self.logger.debug(f"File Suffix:{file_suffix}")
         # NOTE: Valuable files are typically in the root path
         for filename in self.list_remote_files(model_repo):
             path = pathlib.Path(filename)
             if len(path.parents) > 1:
                 continue  # skip nested paths
-            self.logger.debug(f"Suffix: {path.suffix}")
-            if path.suffix == suffix:
-                self.logger.debug(f"File: {filename}")
+            self.logger.debug(f"Path Suffix: {path.suffix}")
+            if path.suffix == file_suffix:
+                self.logger.debug(f"File Name: {filename}")
                 model_files.append(filename)
         return model_files
 
@@ -167,11 +168,8 @@ class HFHubTokenizer(HFHubBase):
         super().__init__(model_path, logger)
 
     @staticmethod
-    def list_vocab_files(vocab_type: ModelTokenizerType) -> tuple[str, ...]:
-        if vocab_type == ModelTokenizerType.SPM.value:
-            return MODEL_TOKENIZER_SPM_FILES
-        # NOTE: WPM and BPE are equivalent
-        return MODEL_TOKENIZER_BPE_FILES
+    def list_vocab_files() -> tuple[str, ...]:
+        return HF_TOKENIZER_FILES
 
     def model(self, model_repo: str) -> SentencePieceProcessor:
         path = self.model_path / model_repo / "tokenizer.model"
@@ -305,11 +303,9 @@ class HFHubModel(HFHubBase):
         # call is not guaranteed.
         return config.get("architectures", [])[0]
 
-    def download_model_files(
-        self, model_repo: str, file_extension: HFFileExtension
-    ) -> None:
+    def download_model_files(self, model_repo: str, file_suffix: str) -> None:
         filtered_files = self.request.list_filtered_remote_files(
-            model_repo, file_extension
+            model_repo, file_suffix
         )
         self._request_listed_files(model_repo, filtered_files)
 
