@@ -310,7 +310,7 @@ class HFHubModel(HFHubBase):
     def download_model_weights_and_tokenizers(self, model_repo: str) -> None:
         # attempt by priority
         self.download_model_weights(model_repo)
-        self.download_model_tokenizer(model_repo)
+        self.download_model_tokenizers(model_repo)
 
     def download_all_repository_files(self, model_repo: str) -> None:
         all_files = self.request.list_remote_files(model_repo)
