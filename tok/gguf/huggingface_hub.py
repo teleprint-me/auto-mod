@@ -9,7 +9,7 @@ import requests
 from sentencepiece import SentencePieceProcessor
 from tqdm import tqdm
 
-from .constants import HF_TOKENIZER_FILES
+from .constants import HF_TOKENIZER_SPM_FILES
 
 
 class HFHubBase(Protocol):
@@ -154,7 +154,7 @@ class HFHubRequest(HFHubBase):
         return [
             tok
             for tok in self.list_remote_files(model_repo)
-            if tok in HF_TOKENIZER_FILES
+            if tok in HF_TOKENIZER_SPM_FILES
         ]
 
 
@@ -166,7 +166,7 @@ class HFHubTokenizer(HFHubBase):
 
     @staticmethod
     def list_vocab_files() -> tuple[str, ...]:
-        return HF_TOKENIZER_FILES
+        return HF_TOKENIZER_SPM_FILES
 
     def model(self, model_repo: str) -> SentencePieceProcessor:
         path = self.model_path / model_repo / "tokenizer.model"
@@ -297,7 +297,11 @@ class HFHubModel(HFHubBase):
         # The general assumption is there is only a single architecture, but
         # merged models may have multiple architecture types. This means this method
         # call is not guaranteed.
-        return self.config(model_repo).get("architectures", [])[0]
+        try:
+            return self.config(model_repo).get("architectures", [])[0]
+        except IndexError:
+            self.logger.debug(f"Failed to get {model_repo} architecture")
+            return str()
 
     def download_model_weights(self, model_repo: str) -> None:
         remote_files = self.request.list_remote_weights(model_repo)
