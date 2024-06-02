@@ -22,7 +22,7 @@ from .constants import (
     GGUFMetadataKeys,
     GGUFRopeScalingType,
     GGUFPoolingType,
-    ModelTokenType,
+    GGUFTokenType,
 )
 
 from .quants import quant_shape_from_byte_shape
@@ -561,7 +561,7 @@ class GGUFWriter:
         self.add_array(GGUFMetadataKeys.Tokenizer.MERGES, merges)
 
     def add_tokenizer_token_type(
-        self, types: Sequence[ModelTokenType] | Sequence[int]
+        self, types: Sequence[GGUFTokenType] | Sequence[int]
     ) -> None:
         self.add_array(GGUFMetadataKeys.Tokenizer.TOKEN_TYPE, types)
 
