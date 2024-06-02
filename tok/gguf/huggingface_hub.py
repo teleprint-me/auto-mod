@@ -143,14 +143,14 @@ class HFHubRequest(HFHubBase):
             if part.startswith("pytorch_model")
         ]
 
-    def list_remote_model_parts(self, model_repo: str) -> list[str]:
+    def list_remote_weights(self, model_repo: str) -> list[str]:
         model_parts = self.list_remote_safetensors(model_repo)
         if not model_parts:
             model_parts = self.list_remote_bin(model_repo)
         self.logger.debug(f"Remote model parts: {model_parts}")
         return model_parts
 
-    def list_remote_tokenizer(self, model_repo: str) -> list[str]:
+    def list_remote_tokenizers(self, model_repo: str) -> list[str]:
         return [
             tok
             for tok in self.list_remote_files(model_repo)
@@ -300,27 +300,19 @@ class HFHubModel(HFHubBase):
         # call is not guaranteed.
         return config.get("architectures", [])[0]
 
-    def download_model_files(self, model_repo: str, file_suffix: str) -> None:
-        filtered_files = self.request.list_filtered_remote_files(
-            model_repo, file_suffix
-        )
-        self._request_listed_files(model_repo, filtered_files)
+    def download_model_weights(self, model_repo: str) -> None:
+        remote_files = self.request.list_remote_weights(model_repo)
+        self._request_listed_files(model_repo, remote_files)
 
-    def download_vocab_files(
-        self, model_repo: str, vocab_type: HFTokenizerType
-    ) -> None:
-        vocab_files = self.tokenizer.list_vocab_files(vocab_type)
-        self._request_listed_files(model_repo, vocab_files)
+    def download_model_tokenizer(self, model_repo: str) -> None:
+        remote_files = self.request.list_remote_tokenizers(model_repo)
+        self._request_listed_files(model_repo, remote_files)
 
-    def download_model_and_vocab_parts(
-        self, model_repo: str, vocab_type: HFTokenizerType
-    ) -> None:
+    def download_model_weights_and_tokenizer(self, model_repo: str) -> None:
         # attempt by priority
-        model_parts = self.request.list_remote_model_parts(model_repo)
-        vocab_parts = self.tokenizer.list_vocab_files(vocab_type)
-        all_files = tuple(model_parts) + vocab_parts
-        self._request_listed_files(model_repo, all_files)
+        self.download_model_weights(model_repo)
+        self.download_model_tokenizer(model_repo)
 
-    def download_all_model_files(self, model_repo: str) -> None:
+    def download_all_repository_files(self, model_repo: str) -> None:
         all_files = self.request.list_remote_files(model_repo)
         self._request_listed_files(model_repo, all_files)
