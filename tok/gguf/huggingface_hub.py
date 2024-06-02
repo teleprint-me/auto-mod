@@ -103,11 +103,8 @@ class HFHubRequest(HFHubBase):
         return response
 
     def model_info(self, model_repo: str) -> dict[str, object]:
-        model_url = f"{self._base_url}/api/models/{model_repo}"
-        response = self._session.get(model_url, headers=self._headers)
-        self.logger.debug(f"Response status was {response.status_code}")
-        response.raise_for_status()
-        return response.json()
+        url = f"{self._base_url}/api/models/{model_repo}"
+        return self.get_response(url).json()
 
     def list_remote_files(self, model_repo: str) -> list[str]:
         # NOTE: Reset the cache if the repo changed
