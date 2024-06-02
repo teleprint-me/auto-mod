@@ -3107,14 +3107,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output-type",
         type=str,
-        choices=["f32", "f16", "bf16", "q8_0", "auto"],
-        default="f16",
-        help="The models precision (default: 'f16'):\n"
-        "\t- f32: float32\n"
-        "\t- f16: float16\n"
-        "\t- bf16: bfloat16\n"
-        "\t- q8_0: Q8_0\n"
-        "\t- auto: the highest-fidelity 16-bit float type depending on the first loaded tensor type.",
+        choices=["F32", "F16", "BF16", "Q8_0", "AUTO"],
+        default="F16",
+        help="The models precision (default: 'F16'):\n"
+        "\t- F32: float32\n"
+        "\t- F16: float16\n"
+        "\t- BF16: bfloat16\n"
+        "\t- Q8_0: Q8_0\n"
+        "\t- AUTO: the highest-fidelity 16-bit float type depending on the first loaded tensor type.",
     )
     parser.add_argument(
         "--big-endian",
@@ -3156,11 +3156,11 @@ def main() -> None:
         model_hub.download_all_model_files(args.model_repo)
 
     # resolve model precision
-    gguf_file_type = GGUF_FILE_TYPE_MAP.get(args.output_type, GGUFFileType.GUESSED)
+    gguf_file_type = GGUF_FILE_TYPE_MAP.get(args.output_type.upper(), GGUFFileType.GUESSED)
     logger.debug(f"Using GGUF file type: {gguf_file_type}")
 
     # Label output model file by precision type
-    gguf_file_path = model_path / f"ggml-model-{args.output_type}.gguf"
+    gguf_file_path = model_path / f"ggml-model-{args.output_type.lower()}.gguf"
     logger.debug(f"Using GGUF model: {gguf_file_path}")
 
     with torch.inference_mode():
