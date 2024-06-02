@@ -1033,7 +1033,7 @@ GGUF_QUANT_SIZES: dict[GGUFQuantizationType, tuple[int, int]] = {
 #
 # Tokenizer Types
 #
-class ModelTokenType(IntEnum):
+class GGUFTokenType(IntEnum):
     NORMAL = 1
     UNKNOWN = 2
     CONTROL = 3
@@ -1042,29 +1042,16 @@ class ModelTokenType(IntEnum):
     BYTE = 6
 
 
-class ModelTokenizerType(Enum):
+class HFTokenizerType(Enum):
     SPM = "SPM"  # SentencePiece LLaMa tokenizer
     BPE = "BPE"  # BytePair GPT-2 tokenizer
     WPM = "WPM"  # WordPiece BERT tokenizer
 
 
 #
-# Model File Types
-#
-class ModelFileExtension(Enum):
-    PT = ".pt"  # torch
-    PTH = ".pth"  # torch
-    BIN = ".bin"  # torch
-    SAFETENSORS = ".safetensors"  # safetensors
-    JSON = ".json"  # transformers/tokenizers
-    MODEL = ".model"  # sentencepiece
-    GGUF = ".gguf"  # ggml/llama.cpp
-
-
-#
 # Normalizer Types
 #
-class ModelNormalizerType(Enum):
+class HFNormalizerType(Enum):
     SEQUENCE = "Sequence"
     NFC = "NFC"
     NFD = "NFD"
@@ -1075,7 +1062,7 @@ class ModelNormalizerType(Enum):
 #
 # Pre-tokenizer Types
 #
-class ModelPreTokenizerType(Enum):
+class HFPreTokenizerType(Enum):
     WHITESPACE = "Whitespace"
     METASPACE = "Metaspace"
     BYTE_LEVEL = "ByteLevel"
@@ -1086,11 +1073,9 @@ class ModelPreTokenizerType(Enum):
 #
 # HF Vocab Files
 #
-MODEL_TOKENIZER_BPE_FILES: tuple[str, ...] = (
+HF_TOKENIZER_FILES: tuple[str, ...] = (
     "config.json",
     "tokenizer_config.json",
     "tokenizer.json",
-)
-MODEL_TOKENIZER_SPM_FILES: tuple[str, ...] = MODEL_TOKENIZER_BPE_FILES + (
     "tokenizer.model",
 )
