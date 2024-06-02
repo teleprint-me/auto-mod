@@ -9,7 +9,7 @@ import requests
 from sentencepiece import SentencePieceProcessor
 from tqdm import tqdm
 
-from .constants import HF_TOKENIZER_FILES, HFTokenizerType
+from .constants import HF_TOKENIZER_FILES
 
 
 class HFHubBase(Protocol):
