@@ -271,7 +271,7 @@ class HFHubModel(HFHubBase):
             self.logger.debug(f"Error while downloading '{file_name}': {str(e)}")
 
     def _request_listed_files(
-        self, model_repo: str, remote_files: tuple[str, ...]
+        self, model_repo: str, remote_files: list[str, ...]
     ) -> None:
         for file_name in tqdm(remote_files, total=len(remote_files)):
             dir_path = self.model_path / model_repo
@@ -293,12 +293,11 @@ class HFHubModel(HFHubBase):
         return json.loads(path.read_text(encoding="utf-8"))
 
     def architecture(self, model_repo: str) -> str:
-        config = self.config(model_repo)
         # NOTE: Allow IndexError to be raised because something unexpected happened.
         # The general assumption is there is only a single architecture, but
         # merged models may have multiple architecture types. This means this method
         # call is not guaranteed.
-        return config.get("architectures", [])[0]
+        return self.config(model_repo).get("architectures", [])[0]
 
     def download_model_weights(self, model_repo: str) -> None:
         remote_files = self.request.list_remote_weights(model_repo)
