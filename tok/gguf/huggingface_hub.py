@@ -304,11 +304,11 @@ class HFHubModel(HFHubBase):
         remote_files = self.request.list_remote_weights(model_repo)
         self._request_listed_files(model_repo, remote_files)
 
-    def download_model_tokenizer(self, model_repo: str) -> None:
+    def download_model_tokenizers(self, model_repo: str) -> None:
         remote_files = self.request.list_remote_tokenizers(model_repo)
         self._request_listed_files(model_repo, remote_files)
 
-    def download_model_weights_and_tokenizer(self, model_repo: str) -> None:
+    def download_model_weights_and_tokenizers(self, model_repo: str) -> None:
         # attempt by priority
         self.download_model_weights(model_repo)
         self.download_model_tokenizer(model_repo)
