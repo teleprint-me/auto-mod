@@ -92,6 +92,16 @@ class HFHubRequest(HFHubBase):
     def base_url(self) -> str:
         return self._base_url
 
+    def resolve_url(self, repo: str, filename: str) -> str:
+        return f"{self._base_url}/{repo}/resolve/main/{filename}"
+
+    def get_response(self, url: str) -> requests.Response:
+        # TODO: Stream requests and use tqdm to output the progress live
+        response = self._session.get(url, headers=self.headers)
+        self.logger.debug(f"Response status was {response.status_code}")
+        response.raise_for_status()
+        return response
+
     def model_info(self, model_repo: str) -> dict[str, object]:
         model_url = f"{self._base_url}/api/models/{model_repo}"
         response = self._session.get(model_url, headers=self._headers)
@@ -161,16 +171,6 @@ class HFHubRequest(HFHubBase):
         # not in line with SentencePiece naming conventions (where the binary format
         # would be called "tokenizer.model").
         return self.list_filtered_remote_files(model_repo, ModelFileExtension.MODEL)
-
-    def resolve_url(self, repo: str, filename: str) -> str:
-        return f"{self._base_url}/{repo}/resolve/main/{filename}"
-
-    def get_response(self, url: str) -> requests.Response:
-        # TODO: Stream requests and use tqdm to output the progress live
-        response = self._session.get(url, headers=self.headers)
-        self.logger.debug(f"Response status was {response.status_code}")
-        response.raise_for_status()
-        return response
 
 
 class HFHubTokenizer(HFHubBase):
