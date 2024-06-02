@@ -10,13 +10,9 @@ from sentencepiece import SentencePieceProcessor
 from tqdm import tqdm
 
 from .constants import (
-    MODEL_TOKENIZER_BPE_FILES,
-    MODEL_TOKENIZER_SPM_FILES,
-    GGUFMetadata,
-    ModelFileExtension,
-    ModelNormalizerType,
-    ModelPreTokenizerType,
-    ModelTokenizerType,
+    HF_TOKENIZER_FILES,
+    HFFileExtension,
+    HFTokenizerType,
 )
 
 
@@ -118,56 +114,50 @@ class HFHubRequest(HFHubBase):
         # Return the cached file listing
         return self._model_files
 
-    def list_filtered_remote_files(
-        self, model_repo: str, file_extension: ModelFileExtension
-    ) -> list[str]:
+    def list_filtered_remote_files(self, model_repo: str, suffix: str) -> list[str]:
         model_files = []
         self.logger.debug(f"Repo:{model_repo}")
-        self.logger.debug(f"FileExtension:{file_extension.value}")
+        self.logger.debug(f"FileExtension:{suffix}")
+        # NOTE: Valuable files are typically in the root path
         for filename in self.list_remote_files(model_repo):
-            suffix = pathlib.Path(filename).suffix
-            self.logger.debug(f"Suffix: {suffix}")
-            if suffix == file_extension.value:
+            path = pathlib.Path(filename)
+            if len(path.parents) > 1:
+                continue  # skip nested paths
+            self.logger.debug(f"Suffix: {path.suffix}")
+            if path.suffix == suffix:
                 self.logger.debug(f"File: {filename}")
                 model_files.append(filename)
         return model_files
 
     def list_remote_safetensors(self, model_repo: str) -> list[str]:
-        return self.list_filtered_remote_files(
-            model_repo, ModelFileExtension.SAFETENSORS
-        )
-
-    def list_remote_torch(self, model_repo: str) -> list[str]:
-        # NOTE: Can be .pt, .pth, or .bin
-        model_parts = self.list_filtered_remote_files(
-            model_repo, ModelFileExtension.PTH
-        )
-        if not model_parts:
-            model_parts = self.list_filtered_remote_files(
-                model_repo, ModelFileExtension.PT
-            )
-        return model_parts
+        # NOTE: HuggingFace recommends using safetensors to mitigate pickled injections
+        return [
+            part
+            for part in self.list_filtered_remote_files(model_repo, ".safetensors")
+            if part.startswith("model")
+        ]
 
     def list_remote_bin(self, model_repo: str) -> list[str]:
-        return self.list_filtered_remote_files(model_repo, ModelFileExtension.BIN)
+        # NOTE: HuggingFace is streamlining PyTorch models with the ".bin" extension
+        return [
+            part
+            for part in self.list_filtered_remote_files(model_repo, ".bin")
+            if part.startswith("pytorch_model")
+        ]
 
     def list_remote_model_parts(self, model_repo: str) -> list[str]:
         model_parts = self.list_remote_safetensors(model_repo)
-        if not model_parts:
-            model_parts = self.list_remote_torch(model_repo)
         if not model_parts:
             model_parts = self.list_remote_bin(model_repo)
         self.logger.debug(f"Remote model parts: {model_parts}")
         return model_parts
 
-    def list_remote_json(self, model_repo: str) -> list[str]:
-        return self.list_filtered_remote_files(model_repo, ModelFileExtension.JSON)
-
-    def list_remote_model(self, model_repo: str) -> list[str]:
-        # NOTE: Facebook's use of a plaintext BPE file named "tokenizer.model" is
-        # not in line with SentencePiece naming conventions (where the binary format
-        # would be called "tokenizer.model").
-        return self.list_filtered_remote_files(model_repo, ModelFileExtension.MODEL)
+    def list_remote_tokenizer(self, model_repo: str) -> list[str]:
+        return [
+            tok
+            for tok in self.list_remote_files(model_repo)
+            if tok in HF_TOKENIZER_FILES
+        ]
 
 
 class HFHubTokenizer(HFHubBase):
@@ -316,7 +306,7 @@ class HFHubModel(HFHubBase):
         return config.get("architectures", [])[0]
 
     def download_model_files(
-        self, model_repo: str, file_extension: ModelFileExtension
+        self, model_repo: str, file_extension: HFFileExtension
     ) -> None:
         filtered_files = self.request.list_filtered_remote_files(
             model_repo, file_extension
@@ -324,13 +314,13 @@ class HFHubModel(HFHubBase):
         self._request_listed_files(model_repo, filtered_files)
 
     def download_vocab_files(
-        self, model_repo: str, vocab_type: ModelTokenizerType
+        self, model_repo: str, vocab_type: HFTokenizerType
     ) -> None:
         vocab_files = self.tokenizer.list_vocab_files(vocab_type)
         self._request_listed_files(model_repo, vocab_files)
 
     def download_model_and_vocab_parts(
-        self, model_repo: str, vocab_type: ModelTokenizerType
+        self, model_repo: str, vocab_type: HFTokenizerType
     ) -> None:
         # attempt by priority
         model_parts = self.request.list_remote_model_parts(model_repo)
