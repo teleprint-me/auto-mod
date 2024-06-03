@@ -7,8 +7,8 @@ import struct
 import tempfile
 from enum import Enum, auto
 from io import BufferedWriter
-from typing import IO, Any, Sequence, Mapping
 from string import ascii_letters, digits
+from typing import IO, Any, Mapping, Sequence
 
 import numpy as np
 
@@ -16,15 +16,14 @@ from .constants import (
     GGUF_DEFAULT_ALIGNMENT,
     GGUF_MAGIC,
     GGUF_VERSION,
-    GGUFQuantizationType,
     GGUFEndian,
-    GGUFValueType,
     GGUFMetadataKeys,
-    GGUFRopeScalingType,
     GGUFPoolingType,
+    GGUFQuantizationType,
+    GGUFRopeScalingType,
     GGUFTokenType,
+    GGUFValueType,
 )
-
 from .quants import quant_shape_from_byte_shape
 
 logger = logging.getLogger(__name__)
@@ -362,11 +361,23 @@ class GGUFWriter:
     def add_architecture(self) -> None:
         self.add_string(GGUFMetadataKeys.General.ARCHITECTURE, self.arch)
 
+    def add_basename(self, basename: str) -> None:
+        self.add_string(GGUFMetadataKeys.General.BASENAME, basename)
+
+    def add_finetune(self, finetune: str) -> None:
+        self.add_string(GGUFMetadataKeys.General.FINETUNE, finetune)
+
     def add_author(self, author: str) -> None:
         self.add_string(GGUFMetadataKeys.General.AUTHOR, author)
 
+    def add_organization(self, organization: str) -> None:
+        self.add_string(GGUFMetadataKeys.General.ORGANIZATION, organization)
+
     def add_version(self, version: str) -> None:
         self.add_string(GGUFMetadataKeys.General.VERSION, version)
+
+    def add_base_version(self, version: str) -> None:
+        self.add_string(GGUFMetadataKeys.General.BASE_VERSION, version)
 
     def add_tensor_data_layout(self, layout: str) -> None:
         self.add_string(
@@ -379,17 +390,37 @@ class GGUFWriter:
     def add_description(self, description: str) -> None:
         self.add_string(GGUFMetadataKeys.General.DESCRIPTION, description)
 
-    def add_licence(self, licence: str) -> None:
-        self.add_string(GGUFMetadataKeys.General.LICENSE, licence)
+    def add_license(self, license: str) -> None:
+        self.add_string(GGUFMetadataKeys.General.LICENSE, license)
+
+    def add_license_name(self, license: str) -> None:
+        self.add_string(GGUFMetadataKeys.General.LICENSE_NAME, license)
+
+    def add_license_link(self, license: str) -> None:
+        self.add_string(GGUFMetadataKeys.General.LICENSE_LINK, license)
 
     def add_source_url(self, url: str) -> None:
         self.add_string(GGUFMetadataKeys.General.SOURCE_URL, url)
 
-    def add_source_hf_repo(self, repo: str) -> None:
-        self.add_string(GGUFMetadataKeys.General.SOURCE_REPO, repo)
+    def add_source_repo(self, repo: str) -> None:
+        self.add_string(GGUFMetadataKeys.General.SOURCE_HF_REPO, repo)
 
     def add_file_type(self, ftype: int) -> None:
         self.add_uint32(GGUFMetadataKeys.General.FILE_TYPE, ftype)
+
+    def add_parameter_size_class(self, parameter_size_class: str) -> None:
+        self.add_string(
+            GGUFMetadataKeys.General.PARAMETER_SIZE_CLASS, parameter_size_class
+        )
+
+    def add_tags(self, tags: Sequence[str]) -> None:
+        self.add_array(GGUFMetadataKeys.Tokenizer.TAGS, tags)
+
+    def add_language(self, language: Sequence[str]) -> None:
+        self.add_array(GGUFMetadataKeys.Tokenizer.LANGUAGE, language)
+
+    def add_datasets(self, datasets: Sequence[str]) -> None:
+        self.add_array(GGUFMetadataKeys.Tokenizer.DATASETS, datasets)
 
     def add_name(self, name: str) -> None:
         self.add_string(GGUFMetadataKeys.General.NAME, name)
@@ -419,9 +450,21 @@ class GGUFWriter:
     def add_block_count(self, length: int) -> None:
         self.add_uint32(GGUFMetadataKeys.LLM.BLOCK_COUNT.format(arch=self.arch), length)
 
+    def add_leading_dense_block_count(self, length: int) -> None:
+        self.add_uint32(
+            GGUFMetadataKeys.LLM.LEADING_DENSE_BLOCK_COUNT.format(arch=self.arch),
+            length,
+        )
+
     def add_feed_forward_length(self, length: int) -> None:
         self.add_uint32(
             GGUFMetadataKeys.LLM.FEED_FORWARD_LENGTH.format(arch=self.arch), length
+        )
+
+    def add_expert_feed_forward_length(self, length: int) -> None:
+        self.add_uint32(
+            GGUFMetadataKeys.LLM.EXPERT_FEED_FORWARD_LENGTH.format(arch=self.arch),
+            length,
         )
 
     def add_parallel_residual(self, use: bool) -> None:
@@ -470,6 +513,16 @@ class GGUFWriter:
             GGUFMetadataKeys.LLM.EXPERT_USED_COUNT.format(arch=self.arch), count
         )
 
+    def add_expert_shared_count(self, count: int) -> None:
+        self.add_uint32(
+            GGUFMetadataKeys.LLM.EXPERT_SHARED_COUNT.format(arch=self.arch), count
+        )
+
+    def add_expert_weights_scale(self, value: float) -> None:
+        self.add_float32(
+            GGUFMetadataKeys.LLM.EXPERT_WEIGHTS_SCALE.format(arch=self.arch), value
+        )
+
     def add_layer_norm_eps(self, value: float) -> None:
         self.add_float32(
             GGUFMetadataKeys.Attention.LAYERNORM_EPS.format(arch=self.arch), value
@@ -482,6 +535,16 @@ class GGUFWriter:
 
     def add_causal_attention(self, value: bool) -> None:
         self.add_bool(GGUFMetadataKeys.Attention.CAUSAL.format(arch=self.arch), value)
+
+    def add_q_lora_rank(self, length: int) -> None:
+        self.add_uint32(
+            GGUFMetadataKeys.Attention.Q_LORA_RANK.format(arch=self.arch), length
+        )
+
+    def add_kv_lora_rank(self, length: int) -> None:
+        self.add_uint32(
+            GGUFMetadataKeys.Attention.KV_LORA_RANK.format(arch=self.arch), length
+        )
 
     def add_pooling_type(self, value: GGUFPoolingType) -> None:
         self.add_uint32(
@@ -519,6 +582,11 @@ class GGUFWriter:
     def add_rope_scaling_finetuned(self, value: bool) -> None:
         self.add_bool(
             GGUFMetadataKeys.Rope.SCALING_FINETUNED.format(arch=self.arch), value
+        )
+
+    def add_rope_scaling_yarn_log_mul(self, value: float) -> None:
+        self.add_float32(
+            GGUFMetadataKeys.Rope.SCALING_YARN_LOG_MUL.format(arch=self.arch), value
         )
 
     def add_ssm_conv_kernel(self, value: int) -> None:
