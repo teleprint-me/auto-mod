@@ -98,7 +98,7 @@ class GGUFMetadata:
         return metadata
 
     @staticmethod
-    def _load_file(path: Optional[Path]) -> dict[str, object]:
+    def _load_file(path: Optional[Path] = None) -> dict[str, object]:
         if path is None or not path.exists():
             return dict()
 
