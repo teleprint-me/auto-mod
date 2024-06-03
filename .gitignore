@@ -4,6 +4,7 @@
 /local
 /logs
 /data
+/specs
 
 # ignore local files
 *.ini
