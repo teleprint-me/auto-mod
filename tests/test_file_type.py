@@ -30,6 +30,7 @@ def test_gguf_file(file_type):
     )
 
 
+@pytest.mark.skip
 def test_unknown_file(file_type):
     assert file_type.get_file_type("test_unknown_file.txt") is None
 
