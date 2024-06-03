@@ -8,7 +8,6 @@ from typing import Optional
 import frontmatter
 
 from .constants import GGUFMetadataKeys
-from .huggingface_hub import HFHubModel
 
 
 @dataclass
@@ -86,9 +85,12 @@ class GGUFMetadata:
         # GGUFMetadata Override File Provided
         if metadata_override_path is not None:
             override = GGUFMetadata.load_metadata_override(metadata_override_path)
-
-            for key, value in vars(GGUFMetadataKeys.General).items():
-                setattr(metadata, key, override.get(key, getattr(metadata, key)))
+            # metadata.<attr> = override.get(Keys.General.<attr>, metadata.<attr>)
+            for k, v in vars(GGUFMetadataKeys.General).items():
+                if not k.startswith("__"):
+                    key = k.lower()
+                    val = override.get(v, getattr(metadata, key))
+                    setattr(metadata, key, val)
 
         # Direct GGUFMetadata Override (via direct cli argument)
         if model_name is not None:
@@ -97,39 +99,38 @@ class GGUFMetadata:
         return metadata
 
     @staticmethod
-    def load_metadata_override(metadata_override_path: Optional[Path]):
-        if metadata_override_path is None or not metadata_override_path.exists():
-            return {}
+    def _load_file(path: Optional[Path]) -> dict[str, object]:
+        if path is None or not path.exists():
+            return dict()
 
-        with open(metadata_override_path, "r", encoding="utf-8") as f:
-            return json.load(f)
+        with open(path, "r", encoding="utf-8") as f:
+            content = f.read()
 
-    @staticmethod
-    def load_model_card(model_path: Optional[Path]):
-        if model_path is None or not model_path.exists():
-            return {}
+        if path.suffix in [".md", ".yaml", ".yml"]:
+            # Model card file
+            return frontmatter.load(content)
 
-        model_card_path = model_path / "README.md"
+        elif path.suffix == ".json":
+            # Other files (like config.json, metadata_override.json, etc.)
+            return json.loads(content)
 
-        if not model_card_path.exists():
-            return {}
-
-        with open(model_card_path, "r", encoding="utf-8") as f:
-            return frontmatter.load(f)
+        else:
+            raise ValueError("Unsupported file type.")
 
     @staticmethod
-    def load_huggingface_parameters(model_path: Optional[Path]):
-        if model_path is None or not model_path.exists():
-            return {}
-
-        config_path = model_path / "config.json"
-
-        if not config_path.exists():
-            return {}
-
-        with open(config_path, "r", encoding="utf-8") as f:
-            return json.load(f)
+    def load_metadata_override(
+        metadata_override_path: Optional[Path] = None,
+    ) -> dict[str, object]:
+        return GGUFMetadata._load_file(metadata_override_path)
 
     @staticmethod
-    def load_remote_model_card(hub_model: HFHubModel):
-        pass
+    def load_model_card(
+        model_path: Optional[Path] = None,
+    ) -> dict[str, object]:
+        return GGUFMetadata._load_file(model_path / "README.md")
+
+    @staticmethod
+    def load_huggingface_parameters(
+        model_path: Optional[Path] = None,
+    ) -> dict[str, object]:
+        return GGUFMetadata._load_file(model_path / "config.json")
