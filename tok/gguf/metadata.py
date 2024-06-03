@@ -8,6 +8,7 @@ from typing import Optional
 import frontmatter
 
 from .constants import GGUFMetadataKeys
+from huggingface_hub import HFHubModel
 
 
 @dataclass
@@ -186,3 +187,7 @@ class GGUFMetadata:
 
         with open(config_path, "r", encoding="utf-8") as f:
             return json.load(f)
+
+    @staticmethod
+    def load_remote_model_card(hub_model: HFHubModel):
+        pass
