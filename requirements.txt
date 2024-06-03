@@ -1,6 +1,9 @@
 bpython
+pytest
 isort
+black
 tqdm
+blobfile
 pyarrow
 numpy
 sentencepiece
