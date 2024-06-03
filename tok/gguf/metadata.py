@@ -57,20 +57,26 @@ class GGUFMetadata:
                 setattr(metadata, "name", value)
             elif key == "model_creator":
                 setattr(metadata, "author", value)
-            elif not value and key in ["tags", "datasets", "language"]:
-                setattr(metadata, [])
+
+            # For attributes like tags, datasets and language that can be lists
+            elif key in ["tags", "datasets", "language"]:
+                setattr(metadata, key, [])
+
+            # If the attribute is not found in model card or it's empty string (""),
+            # we use metadata[key] to preserve its existing value.
             elif not value:
-                setattr(metadata, getattr(metadata, key))
+                setattr(metadata, key, getattr(metadata, key))
+
             else:
-                setattr(metadata, value)
+                setattr(metadata, key, value)
 
         # load huggingface parameters if available
         hf_params = GGUFMetadata.load_huggingface_parameters(model_path)
         hf_name_or_path = hf_params.get("_name_or_path")
         if metadata.name is None and hf_name_or_path is not None:
             metadata.name = Path(hf_name_or_path).name
-        if metadata.source_hf_repo is None and hf_name_or_path is not None:
-            metadata.source_hf_repo = Path(hf_name_or_path).name
+        if metadata.source_repo is None and hf_name_or_path is not None:
+            metadata.source_repo = Path(hf_name_or_path).name
 
         # Use Directory Folder Name As Fallback Name
         if metadata.name is None:
@@ -78,17 +84,11 @@ class GGUFMetadata:
                 metadata.name = model_path.name
 
         # GGUFMetadata Override File Provided
-        # This is based on LLM_KV_NAMES mapping in llama.cpp
         if metadata_override_path is not None:
-            override: dict[str, object] = GGUFMetadata.load_metadata_override(
-                metadata_override_path
-            )
+            override = GGUFMetadata.load_metadata_override(metadata_override_path)
 
-            for key, value in override.items():
-                if value:
-                    setattr(metadata, value)
-                else:
-                    setattr(metadata, getattr(metadata, key))
+            for key, value in vars(GGUFMetadataKeys.General).items():
+                setattr(metadata, key, override.get(key, getattr(metadata, key)))
 
         # Direct GGUFMetadata Override (via direct cli argument)
         if model_name is not None:
