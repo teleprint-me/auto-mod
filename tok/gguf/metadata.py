@@ -92,61 +92,17 @@ class GGUFMetadata:
 
         # GGUFMetadata Override File Provided
         # This is based on LLM_KV_NAMES mapping in llama.cpp
-        metadata_override = GGUFMetadata.load_metadata_override(metadata_override_path)
-        metadata.name = metadata_override.get(
-            GGUFMetadataKeys.General.NAME, metadata.name
-        )  # noqa: E202
-        metadata.basename = metadata_override.get(
-            GGUFMetadataKeys.General.BASENAME, metadata.basename
-        )  # noqa: E202
-        metadata.finetune = metadata_override.get(
-            GGUFMetadataKeys.General.FINETUNE, metadata.finetune
-        )  # noqa: E202
-        metadata.author = metadata_override.get(
-            GGUFMetadataKeys.General.AUTHOR, metadata.author
-        )  # noqa: E202
-        metadata.organization = metadata_override.get(
-            GGUFMetadataKeys.General.ORGANIZATION, metadata.organization
-        )  # noqa: E202
-        metadata.version = metadata_override.get(
-            GGUFMetadataKeys.General.VERSION, metadata.version
-        )  # noqa: E202
-        metadata.base_version = metadata_override.get(
-            GGUFMetadataKeys.General.BASE_VERSION, metadata.base_version
-        )  # noqa: E202
-        metadata.url = metadata_override.get(
-            GGUFMetadataKeys.General.URL, metadata.url
-        )  # noqa: E202
-        metadata.description = metadata_override.get(
-            GGUFMetadataKeys.General.DESCRIPTION, metadata.description
-        )  # noqa: E202
-        metadata.license = metadata_override.get(
-            GGUFMetadataKeys.General.LICENSE, metadata.license
-        )  # noqa: E202
-        metadata.license_name = metadata_override.get(
-            GGUFMetadataKeys.General.LICENSE_NAME, metadata.license_name
-        )  # noqa: E202
-        metadata.license_link = metadata_override.get(
-            GGUFMetadataKeys.General.LICENSE_LINK, metadata.license_link
-        )  # noqa: E202
-        metadata.source_url = metadata_override.get(
-            GGUFMetadataKeys.General.SOURCE_URL, metadata.source_url
-        )  # noqa: E202
-        metadata.source_hf_repo = metadata_override.get(
-            GGUFMetadataKeys.General.SOURCE_HF_REPO, metadata.source_hf_repo
-        )  # noqa: E202
-        metadata.parameter_size_class = metadata_override.get(
-            GGUFMetadataKeys.General.PARAMETER_SIZE_CLASS, metadata.parameter_size_class
-        )  # noqa: E202
-        metadata.tags = metadata_override.get(
-            GGUFMetadataKeys.General.TAGS, metadata.tags
-        )  # noqa: E202
-        metadata.language = metadata_override.get(
-            GGUFMetadataKeys.General.LANGUAGE, metadata.language
-        )  # noqa: E202
-        metadata.datasets = metadata_override.get(
-            GGUFMetadataKeys.General.datasets, metadata.datasets
-        )  # noqa: E202
+        if metadata_override_path is not None:
+            override: dict[str, object] = GGUFMetadata.load_metadata_override(
+                metadata_override_path
+            )
+
+            metadata.__dict__.update(
+                {
+                    key: value or getattr(metadata, key)
+                    for key, value in override.items()
+                }
+            )
 
         # Direct GGUFMetadata Override (via direct cli argument)
         if model_name is not None:
