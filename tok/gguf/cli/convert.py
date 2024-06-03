@@ -72,7 +72,7 @@ AnyModel = TypeVar("AnyModel", bound="type[Model]")
 class Model:
     _model_classes: dict[str, type[Model]] = {}
 
-    dir_model: Path
+    model_path: Path
     ftype: int
     is_big_endian: bool
     endianess: GGUFEndian
@@ -92,7 +92,7 @@ class Model:
 
     def __init__(
         self,
-        dir_model: Path,
+        model_path: Path,
         ftype: GGUFFileType,
         fname_out: Path,
         is_big_endian: bool,
@@ -103,17 +103,17 @@ class Model:
             raise TypeError(
                 f"{type(self).__name__!r} should not be directly instantiated"
             )
-        self.dir_model = dir_model
+        self.model_path = model_path
         self.ftype = ftype
         self.is_big_endian = is_big_endian
         self.endianess = GGUFEndian.BIG if is_big_endian else GGUFEndian.LITTLE
         self.use_temp_file = use_temp_file
         self.lazy = not eager
-        self.part_names = Model.get_model_part_names(self.dir_model, ".safetensors")
+        self.part_names = Model.get_model_part_names(self.model_path, ".safetensors")
         self.is_safetensors = len(self.part_names) > 0
         if not self.is_safetensors:
-            self.part_names = Model.get_model_part_names(self.dir_model, ".bin")
-        self.hparams = Model.load_hparams(self.dir_model)
+            self.part_names = Model.get_model_part_names(self.model_path, ".bin")
+        self.hparams = Model.load_hparams(self.model_path)
         self.block_count = self.find_hparam(
             ["n_layers", "num_hidden_layers", "n_layer"]
         )
@@ -173,7 +173,7 @@ class Model:
             )
             index_name += ".index.json"
             logger.info(f"gguf: loading model weight map from '{index_name}'")
-            with open(self.dir_model / index_name, "r", encoding="utf-8") as f:
+            with open(self.model_path / index_name, "r", encoding="utf-8") as f:
                 index: dict[str, Any] = json.load(f)
                 weight_map = index.get("weight_map")
                 if weight_map is None or not isinstance(weight_map, dict):
@@ -188,12 +188,14 @@ class Model:
             if self.is_safetensors:
                 ctx = cast(
                     ContextManager[Any],
-                    safe_open(self.dir_model / part_name, framework="pt", device="cpu"),
+                    safe_open(
+                        self.model_path / part_name, framework="pt", device="cpu"
+                    ),
                 )
             else:
                 ctx = contextlib.nullcontext(
                     torch.load(
-                        str(self.dir_model / part_name),
+                        str(self.model_path / part_name),
                         map_location="cpu",
                         mmap=True,
                         weights_only=True,
@@ -267,7 +269,7 @@ class Model:
         return new_name
 
     def set_gguf_parameters(self):
-        self.gguf_writer.add_name(self.dir_model.name)
+        self.gguf_writer.add_name(self.model_path.name)
         self.gguf_writer.add_block_count(self.block_count)
 
         if (
@@ -461,9 +463,9 @@ class Model:
         self.gguf_writer.close()
 
     @staticmethod
-    def get_model_part_names(dir_model: Path, suffix: str) -> list[str]:
+    def get_model_part_names(model_path: Path, suffix: str) -> list[str]:
         part_names: list[str] = []
-        for filename in os.listdir(dir_model):
+        for filename in os.listdir(model_path):
             if filename.endswith(suffix):
                 part_names.append(filename)
 
@@ -472,8 +474,8 @@ class Model:
         return part_names
 
     @staticmethod
-    def load_hparams(dir_model: Path):
-        with open(dir_model / "config.json", "r", encoding="utf-8") as f:
+    def load_hparams(model_path: Path):
+        with open(model_path / "config.json", "r", encoding="utf-8") as f:
             return json.load(f)
 
     @classmethod
@@ -500,7 +502,7 @@ class Model:
         tokens: list[str] = []
         toktypes: list[int] = []
 
-        tokenizer = AutoTokenizer.from_pretrained(self.dir_model)
+        tokenizer = AutoTokenizer.from_pretrained(self.model_path)
         vocab_size = self.hparams.get("vocab_size", len(tokenizer.vocab))
         assert max(tokenizer.vocab.values()) < vocab_size
 
@@ -593,16 +595,16 @@ class Model:
         self.gguf_writer.add_tokenizer_vocab(tokens)
         self.gguf_writer.add_tokenizer_token_type(toktypes)
 
-        special_vocab = GGUFSpecialVocab(self.dir_model, load_merges=True)
+        special_vocab = GGUFSpecialVocab(self.model_path, load_merges=True)
         special_vocab.add_to_gguf(self.gguf_writer)
 
     def _set_vocab_qwen(self):
-        dir_model = self.dir_model
+        model_path = self.model_path
         hparams = self.hparams
         tokens: list[str] = []
         toktypes: list[int] = []
 
-        tokenizer = AutoTokenizer.from_pretrained(dir_model, trust_remote_code=True)
+        tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
         vocab_size = hparams["vocab_size"]
         assert max(tokenizer.get_vocab().values()) < vocab_size
 
@@ -640,7 +642,7 @@ class Model:
         self.gguf_writer.add_tokenizer_vocab(tokens)
         self.gguf_writer.add_tokenizer_token_type(toktypes)
 
-        special_vocab = GGUFSpecialVocab(dir_model, load_merges=False)
+        special_vocab = GGUFSpecialVocab(model_path, load_merges=False)
         special_vocab.merges = merges
         # only add special tokens when they were not already loaded from config.json
         if len(special_vocab.special_token_ids) == 0:
@@ -657,7 +659,7 @@ class Model:
         special_vocab.add_to_gguf(self.gguf_writer)
 
     def _set_vocab_sentencepiece(self):
-        tokenizer_path = self.dir_model / "tokenizer.model"
+        tokenizer_path = self.model_path / "tokenizer.model"
 
         tokens: list[bytes] = []
         scores: list[float] = []
@@ -694,7 +696,7 @@ class Model:
             scores[token_id] = score
             toktypes[token_id] = toktype
 
-        added_tokens_file = self.dir_model / "added_tokens.json"
+        added_tokens_file = self.model_path / "added_tokens.json"
         if added_tokens_file.is_file():
             with open(added_tokens_file, "r", encoding="utf-8") as f:
                 added_tokens_json = json.load(f)
@@ -725,11 +727,11 @@ class Model:
         self.gguf_writer.add_tokenizer_scores(scores)
         self.gguf_writer.add_tokenizer_token_type(toktypes)
 
-        special_vocab = GGUFSpecialVocab(self.dir_model, n_vocab=len(tokens))
+        special_vocab = GGUFSpecialVocab(self.model_path, n_vocab=len(tokens))
         special_vocab.add_to_gguf(self.gguf_writer)
 
     def _set_vocab_llama_hf(self):
-        vocab = LlamaHfVocab(self.dir_model)
+        vocab = LlamaHfVocab(self.model_path)
         tokens = []
         scores = []
         toktypes = []
@@ -746,7 +748,7 @@ class Model:
         self.gguf_writer.add_tokenizer_scores(scores)
         self.gguf_writer.add_tokenizer_token_type(toktypes)
 
-        special_vocab = GGUFSpecialVocab(self.dir_model, n_vocab=len(tokens))
+        special_vocab = GGUFSpecialVocab(self.model_path, n_vocab=len(tokens))
         special_vocab.add_to_gguf(self.gguf_writer)
 
 
@@ -757,7 +759,7 @@ class GPTNeoXModel(Model):
     def set_gguf_parameters(self):
         block_count = self.hparams["num_hidden_layers"]
 
-        self.gguf_writer.add_name(self.dir_model.name)
+        self.gguf_writer.add_name(self.model_path.name)
         self.gguf_writer.add_context_length(self.hparams["max_position_embeddings"])
         self.gguf_writer.add_embedding_length(self.hparams["hidden_size"])
         self.gguf_writer.add_block_count(block_count)
@@ -903,7 +905,7 @@ class MPTModel(Model):
 
     def set_gguf_parameters(self):
         block_count = self.hparams["n_layers"]
-        self.gguf_writer.add_name(self.dir_model.name)
+        self.gguf_writer.add_name(self.model_path.name)
         self.gguf_writer.add_context_length(self.hparams["max_seq_len"])
         self.gguf_writer.add_embedding_length(self.hparams["d_model"])
         self.gguf_writer.add_block_count(block_count)
@@ -961,7 +963,7 @@ class OrionModel(Model):
             raise ValueError("gguf: can not find ctx length parameter.")
 
         self.gguf_writer.add_file_type(self.ftype)
-        self.gguf_writer.add_name(self.dir_model.name)
+        self.gguf_writer.add_name(self.model_path.name)
         self.gguf_writer.add_source_hf_repo(hf_repo)
         self.gguf_writer.add_tensor_data_layout("Meta AI original pth")
         self.gguf_writer.add_context_length(ctx_length)
@@ -998,7 +1000,7 @@ class BaichuanModel(Model):
         else:
             raise ValueError("gguf: can not find ctx length parameter.")
 
-        self.gguf_writer.add_name(self.dir_model.name)
+        self.gguf_writer.add_name(self.model_path.name)
         self.gguf_writer.add_source_hf_repo(hf_repo)
         self.gguf_writer.add_tensor_data_layout("Meta AI original pth")
         self.gguf_writer.add_context_length(ctx_length)
@@ -1092,14 +1094,14 @@ class XverseModel(Model):
     model_arch = GGUF_MODEL_ARCH.XVERSE
 
     def set_vocab(self):
-        assert (self.dir_model / "tokenizer.json").is_file()
-        dir_model = self.dir_model
+        assert (self.model_path / "tokenizer.json").is_file()
+        model_path = self.model_path
         hparams = self.hparams
 
         tokens: list[bytes] = []
         toktypes: list[int] = []
 
-        tokenizer = AutoTokenizer.from_pretrained(dir_model)
+        tokenizer = AutoTokenizer.from_pretrained(model_path)
         vocab_size = hparams.get("vocab_size", len(tokenizer.vocab))
         assert max(tokenizer.vocab.values()) < vocab_size
 
@@ -1131,7 +1133,7 @@ class XverseModel(Model):
         self.gguf_writer.add_tokenizer_vocab(tokens)
         self.gguf_writer.add_tokenizer_token_type(toktypes)
 
-        special_vocab = GGUFSpecialVocab(dir_model, n_vocab=len(tokens))
+        special_vocab = GGUFSpecialVocab(model_path, n_vocab=len(tokens))
         special_vocab.add_to_gguf(self.gguf_writer)
 
     def set_gguf_parameters(self):
@@ -1150,7 +1152,7 @@ class XverseModel(Model):
         else:
             raise ValueError("gguf: can not find ctx length parameter.")
 
-        self.gguf_writer.add_name(self.dir_model.name)
+        self.gguf_writer.add_name(self.model_path.name)
         self.gguf_writer.add_source_hf_repo(hf_repo)
         self.gguf_writer.add_tensor_data_layout("Meta AI original pth")
         self.gguf_writer.add_context_length(ctx_length)
@@ -1294,7 +1296,7 @@ class RefactModel(Model):
 
         # TODO: how to determine special FIM tokens automatically?
         special_vocab = GGUFSpecialVocab(
-            self.dir_model,
+            self.model_path,
             load_merges=False,
             special_token_types=["prefix", "suffix", "middle", "fsep", "eot"],
         )
@@ -1384,7 +1386,7 @@ class StableLMModel(Model):
     model_arch = GGUF_MODEL_ARCH.STABLELM
 
     def set_vocab(self):
-        if (self.dir_model / "tokenizer.json").is_file():
+        if (self.model_path / "tokenizer.json").is_file():
             self._set_vocab_gpt2()
         else:
             # StableLM 2 1.6B uses a vocab in a similar format to Qwen's vocab
@@ -1394,7 +1396,7 @@ class StableLMModel(Model):
         hparams = self.hparams
         block_count = hparams["num_hidden_layers"]
 
-        self.gguf_writer.add_name(self.dir_model.name)
+        self.gguf_writer.add_name(self.model_path.name)
         self.gguf_writer.add_context_length(hparams["max_position_embeddings"])
         self.gguf_writer.add_embedding_length(hparams["hidden_size"])
         self.gguf_writer.add_block_count(block_count)
@@ -1514,7 +1516,7 @@ class LlamaModel(Model):
         # Apply to CodeLlama only (and ignore for Llama 3 with a vocab size of 128256)
         if self.hparams.get("vocab_size", 32000) == 32016:
             special_vocab = GGUFSpecialVocab(
-                self.dir_model,
+                self.model_path,
                 load_merges=False,
                 special_token_types=["prefix", "suffix", "middle", "eot"],
             )
@@ -1934,7 +1936,7 @@ class GPT2Model(Model):
     model_arch = GGUF_MODEL_ARCH.GPT2
 
     def set_gguf_parameters(self):
-        self.gguf_writer.add_name(self.dir_model.name)
+        self.gguf_writer.add_name(self.model_path.name)
         self.gguf_writer.add_block_count(self.hparams["n_layer"])
         self.gguf_writer.add_context_length(self.hparams["n_ctx"])
         self.gguf_writer.add_embedding_length(self.hparams["n_embd"])
@@ -2006,7 +2008,7 @@ class Phi3MiniModel(Model):
     model_arch = GGUF_MODEL_ARCH.PHI3
 
     def set_vocab(self):
-        tokenizer_path = self.dir_model / "tokenizer.model"
+        tokenizer_path = self.model_path / "tokenizer.model"
 
         if not tokenizer_path.is_file():
             raise ValueError(f"Error: Missing {tokenizer_path}")
@@ -2040,7 +2042,7 @@ class Phi3MiniModel(Model):
             scores[token_id] = score
             toktypes[token_id] = toktype
 
-        added_tokens_file = self.dir_model / "added_tokens.json"
+        added_tokens_file = self.model_path / "added_tokens.json"
         if added_tokens_file.is_file():
             with open(added_tokens_file, "r", encoding="utf-8") as f:
                 added_tokens_json = json.load(f)
@@ -2057,7 +2059,7 @@ class Phi3MiniModel(Model):
                     scores[token_id] = -1000.0
                     toktypes[token_id] = GGUFTokenType.USER_DEFINED
 
-        tokenizer_config_file = self.dir_model / "tokenizer_config.json"
+        tokenizer_config_file = self.model_path / "tokenizer_config.json"
         if tokenizer_config_file.is_file():
             with open(tokenizer_config_file, "r", encoding="utf-8") as f:
                 tokenizer_config_json = json.load(f)
@@ -2075,7 +2077,7 @@ class Phi3MiniModel(Model):
                     if foken_data.get("special"):
                         toktypes[token_id] = GGUFTokenType.CONTROL
 
-        tokenizer_file = self.dir_model / "tokenizer.json"
+        tokenizer_file = self.model_path / "tokenizer.json"
         if tokenizer_file.is_file():
             with open(tokenizer_file, "r", encoding="utf-8") as f:
                 tokenizer_json = json.load(f)
@@ -2096,7 +2098,7 @@ class Phi3MiniModel(Model):
         self.gguf_writer.add_tokenizer_scores(scores)
         self.gguf_writer.add_tokenizer_token_type(toktypes)
 
-        special_vocab = GGUFSpecialVocab(self.dir_model, n_vocab=len(tokens))
+        special_vocab = GGUFSpecialVocab(self.model_path, n_vocab=len(tokens))
         special_vocab.add_to_gguf(self.gguf_writer)
 
     def set_gguf_parameters(self):
@@ -2284,7 +2286,7 @@ class InternLM2Model(Model):
         # recognized as an empty string in C++.
         from sentencepiece import sentencepiece_model_pb2 as model
 
-        tokenizer_path = self.dir_model / "tokenizer.model"
+        tokenizer_path = self.model_path / "tokenizer.model"
 
         tokens: list[bytes] = []
         scores: list[float] = []
@@ -2327,7 +2329,7 @@ class InternLM2Model(Model):
             scores.append(score)
             toktypes.append(toktype)
 
-        added_tokens_file = self.dir_model / "added_tokens.json"
+        added_tokens_file = self.model_path / "added_tokens.json"
         if added_tokens_file.is_file():
             with open(added_tokens_file, "r", encoding="utf-8") as f:
                 added_tokens_json = json.load(f)
@@ -2343,9 +2345,9 @@ class InternLM2Model(Model):
         self.gguf_writer.add_tokenizer_token_type(toktypes)
         self.gguf_writer.add_add_space_prefix(add_prefix)
 
-        special_vocab = GGUFSpecialVocab(self.dir_model, n_vocab=len(tokens))
+        special_vocab = GGUFSpecialVocab(self.model_path, n_vocab=len(tokens))
         old_eos = special_vocab.special_token_ids["eos"]
-        if "chat" in os.path.basename(self.dir_model.absolute()):
+        if "chat" in os.path.basename(self.model_path.absolute()):
             # For the chat model, we replace the eos with '<|im_end|>'.
             # TODO: this is a hack, should be fixed
             #       https://github.com/ggerganov/llama.cpp/pull/6745#issuecomment-2067687048
@@ -2446,7 +2448,7 @@ class BertModel(Model):
 
         # get pooling path
         pooling_path = None
-        module_path = self.dir_model / "modules.json"
+        module_path = self.model_path / "modules.json"
         if module_path.is_file():
             with open(module_path, encoding="utf-8") as f:
                 modules = json.load(f)
@@ -2458,7 +2460,7 @@ class BertModel(Model):
         # get pooling type
         if pooling_path is not None:
             with open(
-                self.dir_model / pooling_path / "config.json", encoding="utf-8"
+                self.model_path / pooling_path / "config.json", encoding="utf-8"
             ) as f:
                 pooling = json.load(f)
             if pooling["pooling_mode_mean_tokens"]:
@@ -2493,7 +2495,7 @@ class BertModel(Model):
         self.gguf_writer.add_tokenizer_token_type(toktypes)
 
         # handle special tokens
-        special_vocab = GGUFSpecialVocab(self.dir_model, n_vocab=len(tokens))
+        special_vocab = GGUFSpecialVocab(self.model_path, n_vocab=len(tokens))
         special_vocab.add_to_gguf(self.gguf_writer)
 
     def modify_tensors(
@@ -2551,7 +2553,7 @@ class GemmaModel(Model):
 
         # TODO: these special tokens should be exported only for the CodeGemma family
         special_vocab = GGUFSpecialVocab(
-            self.dir_model,
+            self.model_path,
             load_merges=False,
             special_token_types=["prefix", "suffix", "middle", "fsep", "eot"],
         )
@@ -2566,7 +2568,7 @@ class GemmaModel(Model):
         hparams = self.hparams
         block_count = hparams["num_hidden_layers"]
 
-        self.gguf_writer.add_name(self.dir_model.name)
+        self.gguf_writer.add_name(self.model_path.name)
         self.gguf_writer.add_context_length(hparams["max_position_embeddings"])
         self.gguf_writer.add_embedding_length(hparams["hidden_size"])
         self.gguf_writer.add_block_count(block_count)
@@ -2620,9 +2622,9 @@ class MambaModel(Model):
         vocab_size = -(vocab_size // -pad_vocab) * pad_vocab
         self.hparams["vocab_size"] = vocab_size
 
-        if (self.dir_model / "tokenizer.json").is_file():
+        if (self.model_path / "tokenizer.json").is_file():
             self._set_vocab_gpt2()
-        elif (self.dir_model / "tokenizer.model").is_file():
+        elif (self.model_path / "tokenizer.model").is_file():
             self._set_vocab_sentencepiece()
         else:
             # Use the GPT-NeoX tokenizer when no tokenizer files are present
@@ -2702,7 +2704,7 @@ class MambaModel(Model):
         # Fail early for models which don't have a block expansion factor of 2
         assert d_inner == 2 * d_model
 
-        self.gguf_writer.add_name(self.dir_model.name)
+        self.gguf_writer.add_name(self.model_path.name)
         self.gguf_writer.add_context_length(
             2**20
         )  # arbitrary value; for those who use the default
@@ -2841,7 +2843,9 @@ class JinaBertV2Model(BertModel):
 
     def set_vocab(self, *args, **kwargs):
         tokenizer_class = "BertTokenizer"
-        with open(self.dir_model / "tokenizer_config.json", "r", encoding="utf-8") as f:
+        with open(
+            self.model_path / "tokenizer_config.json", "r", encoding="utf-8"
+        ) as f:
             tokenizer_class = json.load(f)["tokenizer_class"]
 
         if tokenizer_class == "BertTokenizer":
@@ -2865,7 +2869,7 @@ class ArcticModel(Model):
         # The reason for using a custom implementation here is that the
         # snowflake-arctic-instruct model redefined tokens 31998 and 31999 from
         # tokenizer.model and used them as BOS and EOS instead of adding new tokens.
-        tokenizer_path = self.dir_model / "tokenizer.model"
+        tokenizer_path = self.model_path / "tokenizer.model"
 
         if not tokenizer_path.is_file():
             logger.error(f"Error: Missing {tokenizer_path}")
@@ -2903,7 +2907,7 @@ class ArcticModel(Model):
 
         # Use the added_tokens_decoder field from tokeniser_config.json as the source
         # of information about added/redefined tokens and modify them accordingly.
-        tokenizer_config_file = self.dir_model / "tokenizer_config.json"
+        tokenizer_config_file = self.model_path / "tokenizer_config.json"
         if tokenizer_config_file.is_file():
             with open(tokenizer_config_file, "r", encoding="utf-8") as f:
                 tokenizer_config_json = json.load(f)
@@ -2943,7 +2947,7 @@ class ArcticModel(Model):
         self.gguf_writer.add_tokenizer_scores(scores)
         self.gguf_writer.add_tokenizer_token_type(toktypes)
 
-        special_vocab = GGUFSpecialVocab(self.dir_model, n_vocab=len(tokens))
+        special_vocab = GGUFSpecialVocab(self.model_path, n_vocab=len(tokens))
         special_vocab.add_to_gguf(self.gguf_writer)
 
     def set_gguf_parameters(self):
