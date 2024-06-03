@@ -70,7 +70,7 @@ class FileType:
                 raise LookupError("Unrecognized json tokenizer model format")
 
         except json.JSONDecodeError:
-            raise
+            return False  # Not a valid JSON file
 
     def is_plaintext(self, file_name: str) -> bool:
         return not self.is_binary(file_name)
@@ -100,8 +100,8 @@ def main():
         help="The input tokenizer model filepath",
     )
     args = parser.parse_args()
-    vocab = FileType(args.file_path)
-    print(FileType.get_type(vocab.file_name))
+    vocab = FileType()
+    print(vocab.get_type(args.file_path))
 
 
 if __name__ == "__main__":
