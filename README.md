@@ -1,2 +1,2 @@
-# Tokenizers
-Workspace for experimenting with tokenizer models involving popular plain text and binary formats.
+# Auto-Mod
+Workspace for experimenting with models involving popular plain text and binary formats.
