@@ -78,9 +78,8 @@ class GGUFMetadata:
             metadata.source_repo = Path(hf_name_or_path).name
 
         # Use Directory Folder Name As Fallback Name
-        if metadata.name is None:
-            if model_path is not None and model_path.exists():
-                metadata.name = model_path.name
+        if metadata.name is None and model_path is not None and model_path.exists():
+            metadata.name = model_path.name
 
         # GGUFMetadata Override File Provided
         if metadata_override_path is not None:
