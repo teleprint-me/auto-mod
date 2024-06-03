@@ -22,8 +22,8 @@ class FileType:
 
         try:
             # Attempt to read the file as plaintext using default 'r' mode
-            with open(file_name, "r") as check_file:
-                check_file.read()
+            with open(file_name, "r") as file:
+                file.read()
 
                 # If we reached this point, it means the file is not a
                 # binary file and raises a UnicodeDecodeError exception
@@ -31,12 +31,16 @@ class FileType:
                 return False
 
         except UnicodeDecodeError:
-            with open(file_name, "rb") as check_file:
-                bin_header = check_file.read(4)
+            with open(file_name, "rb") as file:
+                header = file.read(4)
 
                 # Check for the specific byte sequence associated with
                 # SentencePiece models
-                if bin_header == b"\n\x0e\n\x05":
+                if header == b"\n\x0e\n\x05":
+                    return True
+
+                # GGUF models
+                if header == b'GGUF':  # little endian
                     return True
 
                 # If the file is not a binary SentencePiece model, raise an exception
@@ -75,7 +79,7 @@ class FileType:
     def is_plaintext(self, file_name: str) -> bool:
         return not self.is_binary(file_name)
 
-    def get_type(self, file_name: str) -> str:
+    def get_file_type(self, file_name: str) -> str:
         try:
             if self.is_binary(file_name):
                 return "binary"
