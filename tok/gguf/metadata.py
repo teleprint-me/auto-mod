@@ -11,8 +11,8 @@ from .constants import GGUFMetadataKeys
 
 
 @dataclass
-class Metadata:
-    # Authorship Metadata to be written to GGUF KV Store
+class GGUFMetadata:
+    # Authorship GGUFMetadata to be written to GGUF KV Store
     name: Optional[str] = None
     basename: Optional[str] = None
     finetune: Optional[str] = None
@@ -37,17 +37,17 @@ class Metadata:
         metadata_override_path: Optional[Path],
         model_path: Optional[Path],
         model_name: Optional[str],
-    ) -> Metadata:
+    ) -> GGUFMetadata:
         # This grabs as many contextual authorship metadata as possible from the model repository
         # making any conversion as required to match the gguf kv store metadata format
         # as well as giving users the ability to override any authorship metadata that may be incorrect
 
-        # Create a new Metadata instance
-        metadata = Metadata()
+        # Create a new GGUFMetadata instance
+        metadata = GGUFMetadata()
 
         # load model folder model card if available
-        # Reference Model Card Metadata: https://github.com/huggingface/hub-docs/blob/main/modelcard.md?plain=1
-        model_card = Metadata.load_model_card(model_path)
+        # Reference Model Card GGUFMetadata: https://github.com/huggingface/hub-docs/blob/main/modelcard.md?plain=1
+        model_card = GGUFMetadata.load_model_card(model_path)
         if metadata.name is None:
             if (
                 "model-index" in model_card
@@ -77,7 +77,7 @@ class Metadata:
             metadata.datasets = model_card.get("datasets", [])
 
         # load huggingface parameters if available
-        hf_params = Metadata.load_huggingface_parameters(model_path)
+        hf_params = GGUFMetadata.load_huggingface_parameters(model_path)
         hf_name_or_path = hf_params.get("_name_or_path")
         if metadata.name is None and hf_name_or_path is not None:
             metadata.name = Path(hf_name_or_path).name
@@ -89,9 +89,9 @@ class Metadata:
             if model_path is not None and model_path.exists():
                 metadata.name = model_path.name
 
-        # Metadata Override File Provided
+        # GGUFMetadata Override File Provided
         # This is based on LLM_KV_NAMES mapping in llama.cpp
-        metadata_override = Metadata.load_metadata_override(metadata_override_path)
+        metadata_override = GGUFMetadata.load_metadata_override(metadata_override_path)
         metadata.name = metadata_override.get(
             GGUFMetadataKeys.General.NAME, metadata.name
         )  # noqa: E202
@@ -147,7 +147,7 @@ class Metadata:
             GGUFMetadataKeys.General.datasets, metadata.datasets
         )  # noqa: E202
 
-        # Direct Metadata Override (via direct cli argument)
+        # Direct GGUFMetadata Override (via direct cli argument)
         if model_name is not None:
             metadata.name = model_name
 
