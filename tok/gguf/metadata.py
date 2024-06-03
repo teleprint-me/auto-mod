@@ -8,7 +8,7 @@ from typing import Optional
 import frontmatter
 
 from .constants import GGUFMetadataKeys
-from huggingface_hub import HFHubModel
+from .huggingface_hub import HFHubModel
 
 
 @dataclass
@@ -27,7 +27,7 @@ class GGUFMetadata:
     license_name: Optional[str] = None
     license_link: Optional[str] = None
     source_url: Optional[str] = None
-    source_hf_repo: Optional[str] = None
+    source_repo: Optional[str] = None
     parameter_size_class: Optional[str] = None
     tags: Optional[list[str]] = None
     language: Optional[list[str]] = None
@@ -35,9 +35,9 @@ class GGUFMetadata:
 
     @staticmethod
     def load(
-        metadata_override_path: Optional[Path],
-        model_path: Optional[Path],
-        model_name: Optional[str],
+        metadata_override_path: Optional[Path] = None,
+        model_path: Optional[Path] = None,
+        model_name: Optional[str] = None,
     ) -> GGUFMetadata:
         # This grabs as many contextual authorship metadata as possible from the model repository
         # making any conversion as required to match the gguf kv store metadata format
@@ -49,33 +49,20 @@ class GGUFMetadata:
         # load model folder model card if available
         # Reference Model Card GGUFMetadata: https://github.com/huggingface/hub-docs/blob/main/modelcard.md?plain=1
         model_card = GGUFMetadata.load_model_card(model_path)
-        if metadata.name is None:
-            if (
-                "model-index" in model_card
-                and len(model_card["model_name"]) == 1
-                and "name" in model_card["model_name"][0]
-            ):
-                # We check if there is only one model information in the model-index
-                # (This is a safe choice in case there is multiple models in one repo in the future)
-                metadata.name = model_card["model_name"][0].get("name")
-            elif "model_name" in model_card:
-                # non huggingface model card standard but notice some model creator using it
-                metadata.name = model_card.get("model_name")
-        if metadata.license is None:
-            metadata.license = model_card.get("license")
-        if metadata.license_name is None:
-            metadata.license_name = model_card.get("license_name")
-        if metadata.license_link is None:
-            metadata.license_link = model_card.get("license_link")
-        if metadata.author is None:
-            # non huggingface model card standard but notice some model creator using it
-            metadata.author = model_card.get("model_creator")
-        if metadata.tags is None:
-            metadata.tags = model_card.get("tags", [])
-        if metadata.language is None:
-            metadata.language = model_card.get("language", [])
-        if metadata.datasets is None:
-            metadata.datasets = model_card.get("datasets", [])
+
+        for key, value in model_card.items():
+            if key == "model_name" and isinstance(value, list) and len(value) >= 1:
+                setattr(metadata, "name", value[0].get("name"))
+            elif key == "model_name":
+                setattr(metadata, "name", value)
+            elif key == "model_creator":
+                setattr(metadata, "author", value)
+            elif not value and key in ["tags", "datasets", "language"]:
+                setattr(metadata, [])
+            elif not value:
+                setattr(metadata, getattr(metadata, key))
+            else:
+                setattr(metadata, value)
 
         # load huggingface parameters if available
         hf_params = GGUFMetadata.load_huggingface_parameters(model_path)
@@ -97,12 +84,11 @@ class GGUFMetadata:
                 metadata_override_path
             )
 
-            metadata.__dict__.update(
-                {
-                    key: value or getattr(metadata, key)
-                    for key, value in override.items()
-                }
-            )
+            for key, value in override.items():
+                if value:
+                    setattr(metadata, value)
+                else:
+                    setattr(metadata, getattr(metadata, key))
 
         # Direct GGUFMetadata Override (via direct cli argument)
         if model_name is not None:
