@@ -32,22 +32,24 @@ from transformers import AutoTokenizer
 
 from ..constants import (
     GGML_QUANT_VERSION,
+    GGUF_FILE_TYPE_MAP,
     GGUF_MODEL_ARCH,
     GGUF_MODEL_ARCH_NAMES,
     GGUF_MODEL_TENSOR,
     GGUF_MODEL_TENSORS,
     GGUF_TENSOR_NAMES,
-    GGUF_FILE_TYPE_MAP,
-    GGUFPoolingType,
     GGUFEndian,
     GGUFFileType,
     GGUFMetadataKeys,
+    GGUFPoolingType,
     GGUFQuantizationType,
     GGUFRopeScalingType,
-    HFTokenizerType,
     GGUFTokenType,
+    HFTokenizerType,
 )
+from ..huggingface_hub import HFHubModel
 from ..lazy import LazyBase, LazyNumpyTensor
+from ..metadata import GGUFMetadata
 from ..quants import (
     can_quantize_to_q8_0,
     quant_shape_from_byte_shape,
@@ -57,9 +59,9 @@ from ..quants import (
 )
 from ..reader import GGUFReader
 from ..tensor_mapping import TensorNameMap, get_tensor_name_map
+from ..utility import fill_templated_filename, naming_convention, parameter_size_class
 from ..vocab import GGUFSpecialVocab, LlamaHfVocab
 from ..writer import GGUFWriter
-from ..huggingface_hub import HFHubModel
 
 logger = logging.getLogger(__file__)
 
@@ -73,7 +75,7 @@ class Model:
     _model_classes: dict[str, type[Model]] = {}
 
     model_path: Path
-    ftype: int
+    file_type: int
     is_big_endian: bool
     endianess: GGUFEndian
     use_temp_file: bool
@@ -85,7 +87,9 @@ class Model:
     tensor_map: TensorNameMap
     tensor_names: set[str] | None
     fname_out: Path
+    fname_default: Path
     gguf_writer: GGUFWriter
+    metadata: GGUFMetadata
 
     # subclasses should define this!
     model_arch: GGUF_MODEL_ARCH
@@ -93,18 +97,23 @@ class Model:
     def __init__(
         self,
         model_path: Path,
-        ftype: GGUFFileType,
+        file_type: GGUFFileType,
         fname_out: Path,
         is_big_endian: bool,
         use_temp_file: bool,
         eager: bool,
+        metadata: GGUFMetadata,
     ):
         if type(self) is Model:
             raise TypeError(
                 f"{type(self).__name__!r} should not be directly instantiated"
             )
+
+        if metadata is None:
+            raise TypeError("authorship metadata must be provided")
+
         self.model_path = model_path
-        self.ftype = ftype
+        self.file_type = file_type
         self.is_big_endian = is_big_endian
         self.endianess = GGUFEndian.BIG if is_big_endian else GGUFEndian.LITTLE
         self.use_temp_file = use_temp_file
@@ -119,25 +128,64 @@ class Model:
         )
         self.tensor_map = get_tensor_name_map(self.model_arch, self.block_count)
         self.tensor_names = None
-        if self.ftype == GGUFFileType.GUESSED:
+        self.metadata = metadata
+
+        if self.file_type == GGUFFileType.GUESSED:
             # NOTE: can't use field "torch_dtype" in config.json, because some finetunes lie.
             _, first_tensor = next(self.get_tensors())
             if first_tensor.dtype == torch.float16:
                 logger.info(
                     f"choosing --outtype f16 from first tensor type ({first_tensor.dtype})"
                 )
-                self.ftype = GGUFFileType.MOSTLY_F16
+                self.file_type = GGUFFileType.MOSTLY_F16
             else:
                 logger.info(
                     f"choosing --outtype bf16 from first tensor type ({first_tensor.dtype})"
                 )
-                self.ftype = GGUFFileType.MOSTLY_BF16
-        ftype_up: str = self.ftype.name.partition("_")[2].upper()
-        ftype_lw: str = ftype_up.lower()
-        # allow templating the file name with the output ftype, useful with the "auto" ftype
-        self.fname_out = fname_out.parent / fname_out.name.format(
-            ftype_lw, outtype=ftype_lw, ftype=ftype_lw, OUTTYPE=ftype_up, FTYPE=ftype_up
+                self.file_type = GGUFFileType.MOSTLY_BF16
+
+        # Fallback to model architecture name if metadata name is still missing
+        if self.metadata.name is None:
+            self.metadata.name = GGUF_MODEL_ARCH_NAMES[self.model_arch]
+
+        # Extracts and converts the encoding scheme from the given file type name. e.g. 'GGUFFileType.ALL_F32' --> 'F32'
+        output_type = self.file_type.name.partition("_")[2]
+
+        # Update authorship metadata class with parameter size class (useful for leader boards)
+        expert_count = (
+            self.hparams["num_local_experts"]
+            if "num_local_experts" in self.hparams
+            else None
         )
+        weight_estimate = self.per_model_weight_count_estimation(
+            self.get_tensors(), expert_count
+        )
+        self.metadata.parameter_size_class = parameter_size_class(
+            expert_count, weight_estimate
+        )
+
+        # Generate default filename based on model specification and available metadata
+        self.fname_default = naming_convention(
+            self.metadata.name,
+            self.metadata.basename,
+            self.metadata.finetune,
+            self.metadata.version,
+            expert_count,
+            weight_estimate,
+            output_type,
+        )
+
+        # Filename Output
+        if fname_out is not None:
+            # custom defined filename and path was provided
+            self.fname_out = fname_out.parent / fill_templated_filename(
+                fname_out.name, output_type
+            )
+        else:
+            # output in the same directory as the model by default
+            self.fname_out = model_path.parent / self.fname_default
+
+        # Configure GGUF Writer
         self.gguf_writer = GGUFWriter(
             self.fname_out,
             GGUF_MODEL_ARCH_NAMES[self.model_arch],
@@ -318,8 +366,8 @@ class Model:
             self.gguf_writer.add_expert_used_count(n_experts_used)
             logger.info(f"gguf: experts used count = {n_experts_used}")
 
-        self.gguf_writer.add_file_type(self.ftype)
-        logger.info(f"gguf: file type = {self.ftype}")
+        self.gguf_writer.add_file_type(self.file_type)
+        logger.info(f"gguf: file type = {self.file_type}")
 
     def modify_tensors(
         self, data_torch: Tensor, name: str, bid: int | None
@@ -410,14 +458,18 @@ class Model:
                     )
                 )
 
-                if self.ftype != GGUFFileType.ALL_F32 and extra_f16 and not extra_f32:
-                    if self.ftype == GGUFFileType.MOSTLY_BF16:
+                if (
+                    self.file_type != GGUFFileType.ALL_F32
+                    and extra_f16
+                    and not extra_f32
+                ):
+                    if self.file_type == GGUFFileType.MOSTLY_BF16:
                         data = quantize_bf16(data)
                         assert data.dtype == np.int16
                         data_qtype = GGUFQuantizationType.BF16
 
                     elif (
-                        self.ftype == GGUFFileType.MOSTLY_Q8_0
+                        self.file_type == GGUFFileType.MOSTLY_Q8_0
                         and can_quantize_to_q8_0(data)
                     ):
                         data = quantize_q8_0(data)
@@ -832,7 +884,7 @@ class BloomModel(Model):
         self.gguf_writer.add_head_count(n_head)
         self.gguf_writer.add_head_count_kv(n_head)
         self.gguf_writer.add_layer_norm_eps(self.hparams["layer_norm_epsilon"])
-        self.gguf_writer.add_file_type(self.ftype)
+        self.gguf_writer.add_file_type(self.file_type)
 
     def modify_tensors(
         self, data_torch: Tensor, name: str, bid: int | None
@@ -962,7 +1014,7 @@ class OrionModel(Model):
         else:
             raise ValueError("gguf: can not find ctx length parameter.")
 
-        self.gguf_writer.add_file_type(self.ftype)
+        self.gguf_writer.add_file_type(self.file_type)
         self.gguf_writer.add_name(self.model_path.name)
         self.gguf_writer.add_source_hf_repo(hf_repo)
         self.gguf_writer.add_tensor_data_layout("Meta AI original pth")
@@ -1013,7 +1065,7 @@ class BaichuanModel(Model):
         self.gguf_writer.add_head_count(head_count)
         self.gguf_writer.add_head_count_kv(head_count_kv)
         self.gguf_writer.add_layer_norm_rms_eps(self.hparams["rms_norm_eps"])
-        self.gguf_writer.add_file_type(self.ftype)
+        self.gguf_writer.add_file_type(self.file_type)
 
         if (
             self.hparams.get("rope_scaling") is not None
@@ -1165,7 +1217,7 @@ class XverseModel(Model):
         self.gguf_writer.add_head_count(head_count)
         self.gguf_writer.add_head_count_kv(head_count_kv)
         self.gguf_writer.add_layer_norm_rms_eps(self.hparams["rms_norm_eps"])
-        self.gguf_writer.add_file_type(self.ftype)
+        self.gguf_writer.add_file_type(self.file_type)
 
         if (
             self.hparams.get("rope_scaling") is not None
@@ -1234,7 +1286,7 @@ class FalconModel(Model):
         self.gguf_writer.add_head_count(n_head)
         self.gguf_writer.add_head_count_kv(n_head_kv)
         self.gguf_writer.add_layer_norm_eps(self.hparams["layer_norm_epsilon"])
-        self.gguf_writer.add_file_type(self.ftype)
+        self.gguf_writer.add_file_type(self.file_type)
 
     def modify_tensors(
         self, data_torch: Tensor, name: str, bid: int | None
@@ -1284,7 +1336,7 @@ class StarCoderModel(Model):
         self.gguf_writer.add_head_count(self.hparams["n_head"])
         self.gguf_writer.add_head_count_kv(1)
         self.gguf_writer.add_layer_norm_eps(self.hparams["layer_norm_epsilon"])
-        self.gguf_writer.add_file_type(self.ftype)
+        self.gguf_writer.add_file_type(self.file_type)
 
 
 @Model.register("GPTRefactForCausalLM")
@@ -1325,7 +1377,7 @@ class RefactModel(Model):
         self.gguf_writer.add_head_count(self.hparams["n_head"])
         self.gguf_writer.add_head_count_kv(1)
         self.gguf_writer.add_layer_norm_rms_eps(self.hparams["layer_norm_epsilon"])
-        self.gguf_writer.add_file_type(self.ftype)
+        self.gguf_writer.add_file_type(self.file_type)
 
     def modify_tensors(
         self, data_torch: Tensor, name: str, bid: int | None
@@ -1418,7 +1470,7 @@ class StableLMModel(Model):
         self.gguf_writer.add_layer_norm_eps(
             self.find_hparam(["layer_norm_eps", "norm_eps"])
         )
-        self.gguf_writer.add_file_type(self.ftype)
+        self.gguf_writer.add_file_type(self.file_type)
 
     _q_norms: list[dict[str, Tensor]] | None = None
     _k_norms: list[dict[str, Tensor]] | None = None
@@ -1693,15 +1745,15 @@ class DbrxModel(Model):
         self.gguf_writer.add_rope_freq_base(attn_config["rope_theta"])
 
         self.gguf_writer.add_clamp_kqv(attn_config["clip_qkv"])
-        self.gguf_writer.add_file_type(self.ftype)
+        self.gguf_writer.add_file_type(self.file_type)
 
         self.gguf_writer.add_expert_count(ffn_config["moe_num_experts"])
         self.gguf_writer.add_expert_used_count(ffn_config["moe_top_k"])
 
         self.gguf_writer.add_layer_norm_eps(1e-5)
 
-        self.gguf_writer.add_file_type(self.ftype)
-        logger.info(f"gguf: file type = {self.ftype}")
+        self.gguf_writer.add_file_type(self.file_type)
+        logger.info(f"gguf: file type = {self.file_type}")
 
     def modify_tensors(
         self, data_torch: Tensor, name: str, bid: int | None
@@ -1773,7 +1825,7 @@ class MiniCPMModel(Model):
         self.gguf_writer.add_head_count(self.hparams["num_attention_heads"])
         self.gguf_writer.add_head_count_kv(self.hparams["num_key_value_heads"])
         self.gguf_writer.add_layer_norm_rms_eps(self.hparams["rms_norm_eps"])
-        self.gguf_writer.add_file_type(self.ftype)
+        self.gguf_writer.add_file_type(self.file_type)
 
     def set_vocab(self):
         self._set_vocab_llama_hf()
@@ -1858,7 +1910,7 @@ class QwenModel(Model):
         )
         self.gguf_writer.add_head_count(self.hparams["num_attention_heads"])
         self.gguf_writer.add_layer_norm_rms_eps(self.hparams["layer_norm_epsilon"])
-        self.gguf_writer.add_file_type(self.ftype)
+        self.gguf_writer.add_file_type(self.file_type)
 
 
 @Model.register("Qwen2ForCausalLM")
@@ -1943,7 +1995,7 @@ class GPT2Model(Model):
         self.gguf_writer.add_feed_forward_length(4 * self.hparams["n_embd"])
         self.gguf_writer.add_head_count(self.hparams["n_head"])
         self.gguf_writer.add_layer_norm_eps(self.hparams["layer_norm_epsilon"])
-        self.gguf_writer.add_file_type(self.ftype)
+        self.gguf_writer.add_file_type(self.file_type)
 
     def modify_tensors(
         self, data_torch: Tensor, name: str, bid: int | None
@@ -1999,7 +2051,7 @@ class Phi2Model(Model):
             self.find_hparam(["layer_norm_epsilon", "layer_norm_eps"])
         )
         self.gguf_writer.add_rope_dimension_count(int(rot_pct * n_embd) // n_head)
-        self.gguf_writer.add_file_type(self.ftype)
+        self.gguf_writer.add_file_type(self.file_type)
         self.gguf_writer.add_add_bos_token(False)
 
 
@@ -2125,7 +2177,7 @@ class Phi3MiniModel(Model):
         self.gguf_writer.add_layer_norm_rms_eps(rms_eps)
         self.gguf_writer.add_rope_dimension_count(rope_dims)
         self.gguf_writer.add_rope_freq_base(self.find_hparam(["rope_theta"]))
-        self.gguf_writer.add_file_type(self.ftype)
+        self.gguf_writer.add_file_type(self.file_type)
 
         # write rope scaling for long context (128k) model
         rope_scaling = self.find_hparam(["rope_scaling"], True)
@@ -2200,7 +2252,7 @@ class PlamoModel(Model):
             5
         )  # hparams["num_key_value_heads"]) is wrong
         self.gguf_writer.add_layer_norm_rms_eps(hparams["rms_norm_eps"])
-        self.gguf_writer.add_file_type(self.ftype)
+        self.gguf_writer.add_file_type(self.file_type)
 
     def shuffle_attn_q_weight(self, data_torch):
         assert data_torch.size() == (5120, 5120)
@@ -2247,7 +2299,7 @@ class CodeShellModel(Model):
         self.gguf_writer.add_head_count(self.hparams["n_head"])
         self.gguf_writer.add_head_count_kv(self.hparams["num_query_groups"])
         self.gguf_writer.add_layer_norm_eps(self.hparams["layer_norm_epsilon"])
-        self.gguf_writer.add_file_type(self.ftype)
+        self.gguf_writer.add_file_type(self.file_type)
         self.gguf_writer.add_rope_freq_base(10000.0)
         self.gguf_writer.add_rope_scaling_type(GGUFRopeScalingType.LINEAR)
         self.gguf_writer.add_rope_scaling_factor(1.0)
@@ -2392,7 +2444,7 @@ in chat mode so that the conversation can end normally."
         self.gguf_writer.add_head_count(self.hparams["num_attention_heads"])
         self.gguf_writer.add_layer_norm_rms_eps(self.hparams["rms_norm_eps"])
         self.gguf_writer.add_head_count_kv(self.hparams["num_key_value_heads"])
-        self.gguf_writer.add_file_type(self.ftype)
+        self.gguf_writer.add_file_type(self.file_type)
 
     def modify_tensors(
         self, data_torch: Tensor, name: str, bid: int | None
@@ -2582,7 +2634,7 @@ class GemmaModel(Model):
         self.gguf_writer.add_layer_norm_rms_eps(self.hparams["rms_norm_eps"])
         self.gguf_writer.add_key_length(hparams["head_dim"])
         self.gguf_writer.add_value_length(hparams["head_dim"])
-        self.gguf_writer.add_file_type(self.ftype)
+        self.gguf_writer.add_file_type(self.file_type)
 
     def modify_tensors(
         self, data_torch: Tensor, name: str, bid: int | None
@@ -2721,7 +2773,7 @@ class MambaModel(Model):
         self.gguf_writer.add_ssm_state_size(d_state)
         self.gguf_writer.add_ssm_time_step_rank(dt_rank)
         self.gguf_writer.add_layer_norm_rms_eps(rms_norm_eps)
-        self.gguf_writer.add_file_type(self.ftype)
+        self.gguf_writer.add_file_type(self.file_type)
 
     _tok_embd = None
 
@@ -3167,14 +3219,17 @@ def main() -> None:
     with torch.inference_mode():
         logger.info(f"🔥 torching model: {model_path.name} 🔥")
         architecture = model_hub.architecture(args.model_repo)
+        metadata = GGUFMetadata.load(args.metadata, args.model_path, args)
+
         model_class = Model.from_model_architecture(architecture)
         gguf_model = model_class(
-            model_path,
-            gguf_file_type,
-            gguf_file_path,
-            args.big_endian,
-            args.use_temp_file,
-            args.no_lazy,
+            model_path=model_path,
+            file_type=gguf_file_type,
+            fname_out=gguf_file_path,
+            is_big_endian=args.big_endian,
+            use_temp_file=args.use_temp_file,
+            eager=args.no_lazy,
+            metadata=metadata,
         )
 
         logger.info("Set model parameters")
