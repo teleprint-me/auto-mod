@@ -40,6 +40,7 @@
   },
   "isort.args": ["--profile", "black"],
   // C/C++ specific settings
+  "C_Cpp.default.compilerPath": "/usr/bin/clang++",
   "clang-format.executable": "/usr/bin/clang-format",
   "cmake.sourceDirectory": "${workspaceFolder}",
   // Enable clang-format on save for C/C++ code
@@ -70,7 +71,6 @@
     "editor.formatOnSave": true,
     "editor.insertSpaces": true
   },
-  "C_Cpp.default.compilerPath": "/usr/bin/clang++",
   "files.associations": {
     "*.tcss": "jinja-css",
     "iostream": "cpp",
