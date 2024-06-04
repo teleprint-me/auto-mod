@@ -16,5 +16,5 @@ declare -A OUTPUT_MAP=(
 
 for key in "${!URL_MAP[@]}"
 do
-  wget ${URL_MAP[$key]} -O ${OUTPUT_MAP[$key]}
+  wget "${URL_MAP[$key]}" -O "${OUTPUT_MAP[$key]}"
 done
