@@ -70,6 +70,7 @@
     "editor.formatOnSave": true,
     "editor.insertSpaces": true
   },
+  "C_Cpp.default.compilerPath": "/usr/bin/clang++",
   "files.associations": {
     "*.tcss": "jinja-css",
     "iostream": "cpp",
