@@ -7,6 +7,32 @@ import dataclasses
 
 # NOTE: Original script has a typo, e.g. CoodepointFlags
 class CodepointFlags(ctypes.Structure):
+    """
+    Represents Unicode character properties as defined by the Unicode Technical Standard #36 (Unicode 5.2) using Python's ctypes library,
+        providing boolean flags for various categories of characters based on their unicode values and properties.
+
+    This class allows developers to easily check if a given code point belongs to specific character categories such as numbers (\\p{N}),
+        letters (\\p{L}), separators (\\p{Z}), accent marks (\\p{M}), punctuation (\\p{P}), symbols (\\p{S}), and controls (\\p{C}).
+
+    The `CodepointFlags` class uses a structure defined in the unicode.h header file to store these properties efficiently,
+        making it suitable for high-performance applications that need to process large amounts of text data with Unicode support.
+
+    To use this class, create an instance of CodepointFlags and call its `from_codepoints` method passing a list or iterable containing the code points
+        you want to check, e.g.:
+
+        ```python
+        from tok.gguf import unicode
+
+        flags = unicode.CodepointFlags()
+        flagged_chars = [0x2145, 0x65, 0xFFFD]
+
+        flags.from_codepoints(flagged_chars)
+
+        for codepoint in flagged_chars:
+            print(f"{codepoint}: is_number={flags.is_number(codepoint)}, is_letter={flags.is_letter(codepoint)}")
+        ```
+    """
+
     _fields_ = [  # see definition in unicode.h
         ("is_undefined", ctypes.c_uint16, 1),
         ("is_number", ctypes.c_uint16, 1),  # regex: \p{N}
