@@ -47,10 +47,50 @@ class CodepointFlags(ctypes.Structure):
 
 @dataclasses.dataclass
 class UnicodeTable:
-    whitespace: list[int] = []
-    lowercase: list[tuple[int, int]] = []
-    uppercase: list[tuple[int, int]] = []
-    nfd: list[tuple[int, int]] = []
+    """
+    The `UnicodeTable` class serves as a container for various precomputed data related to Unicode characters, such as whitespace codes, lowercase and uppercase character ranges,
+        normalized form D (NFD) mappings, etc., which can be used to improve the performance of text processing tasks.
+
+    This class is primarily useful when working with large amounts of text data that require frequent lookups or manipulations based on Unicode properties,
+        as it provides constant-time access to precomputed data instead of having to perform expensive computations at runtime.
+
+    The `UnicodeTable` class can be initialized with empty lists for each property (whitespace, lowercase, uppercase, and nfd),
+        but the recommended way is to load the necessary data from external files or databases during initialization to ensure accurate and up-to-date information.
+
+    Here's an example of how you can create a `UnicodeTable` instance:
+
+        ```python
+        from tok.gguf import unicode
+
+        table = unicode.UnicodeTable()
+
+        # Load data for each property
+        with open("whitespace_codes.txt", "r") as f:
+            whitespaces = [int(line) for line in f]
+            table.whitespace = whitespaces
+
+        # ... continue loading other properties from external files or databases
+
+        ```
+
+    Once the `UnicodeTable` instance is initialized, you can access its properties using standard Python attribute syntax:
+
+        ```python
+        if 9 == table.whitespace[0]:
+            print("The first whitespace code is a tab.")
+
+        lowercase_range = (table.lowercase[0][0], table.lowercase[-1][1])
+        print(f"Lowercase range: {ord('a')} - {lowercase_range[1]}")
+
+        # ...
+
+        ```
+    """
+
+    whitespace: list[int] = dataclasses.field(default_factory=list)
+    lowercase: list[tuple[int, int]] = dataclasses.field(default_factory=list)
+    uppercase: list[tuple[int, int]] = dataclasses.field(default_factory=list)
+    nfd: list[tuple[int, int]] = dataclasses.field(default_factor=list)
 
 
 @dataclasses.dataclass
