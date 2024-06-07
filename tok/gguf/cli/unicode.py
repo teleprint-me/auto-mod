@@ -7,7 +7,6 @@ Generate 'unicode-data.cpp' and 'unicode-data.h'
 import argparse
 import ctypes
 import logging
-from pathlib import Path
 
 from ..unicode import CodepointFlags, CodepointProcessor
 
@@ -51,6 +50,7 @@ def get_arguments() -> argparse.Namespace:
 
 
 def build_unicode_data_h(max_codepoints: int = 0x110000) -> str:
+    # NOTE: The resulting string is segmented to prevent formatting conflicts with braces
     return """
     #pragma once
 
@@ -65,7 +65,9 @@ def build_unicode_data_h(max_codepoints: int = 0x110000) -> str:
         uint32_t nfd;
     };
     """
-    f"static const uint32_t MAX_CODEPOINTS = {max_codepoints};"
+    f"""
+    static const uint32_t MAX_CODEPOINTS = {max_codepoints};
+    """
     """
     extern const std::vector<std::pair<uint32_t, uint16_t>> unicode_ranges_flags;
     extern const std::unordered_set<uint32_t> unicode_set_whitespace;
@@ -77,7 +79,10 @@ def build_unicode_data_h(max_codepoints: int = 0x110000) -> str:
 
 # TODO: define helper functions for setting mapping?
 def set_ranges_flags(processor: CodepointProcessor, byte_order: str = "little") -> str:
-    unicode_ranges_flags = "const std::vector<std::pair<uint32_t, uint16_t>> unicode_ranges_flags = {  // start, flags // last=next_start-1"
+    unicode_ranges_flags = (
+        "// start, flags // last=next_start-1\n"
+        "const std::vector<std::pair<uint32_t, uint16_t>> unicode_ranges_flags = {"
+    )
     logger.debug(unicode_ranges_flags)
 
     for codepoint, flags in processor.codepoint_ranges.flags:
@@ -90,6 +95,23 @@ def set_ranges_flags(processor: CodepointProcessor, byte_order: str = "little") 
     logger.debug(line)
     unicode_ranges_flags += line
     return unicode_ranges_flags
+
+
+def set_unicode_whitespace(processor: CodepointProcessor) -> str:
+    unicode_set_whitespace = (
+        "const std::unordered_set<uint32_t> unicode_set_whitespace = {"
+    )
+    logger.debug(unicode_set_whitespace)
+
+    for codepoint in processor.unicode_table.whitespace:
+        line = ", ".join("0x%06X" % codepoint)
+        logger.debug(line)
+        unicode_set_whitespace += line
+
+    line = "};\n"
+    logger.debug(line)
+    unicode_set_whitespace += line
+    return unicode_set_whitespace
 
 
 def build_unicode_data_cpp(processor: CodepointProcessor) -> str:
@@ -106,6 +128,7 @@ def build_unicode_data_cpp(processor: CodepointProcessor) -> str:
     """
     logger.debug(unicode_data_cpp)
     unicode_data_cpp += set_ranges_flags(processor)
+    unicode_data_cpp += set_unicode_whitespace(processor)
     # set ranges flags
     # set whitespace
     # map lowercase
