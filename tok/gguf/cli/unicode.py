@@ -18,6 +18,19 @@ def get_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
+# TODO: define helper functions for setting mapping?
+
+
+def build_unicode_source(processor: CodepointProcessor) -> str:
+    # define includes
+    # set ranges flags
+    # set whitespace
+    # map lowercase
+    # map uppercase
+    # set ranges nfd
+    pass
+
+
 def main():
     assert ctypes.sizeof(CodepointFlags) == 2
 
