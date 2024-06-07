@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import string
 from dataclasses import dataclass
 from enum import Enum, IntEnum, auto
 from pathlib import Path
@@ -8,10 +9,10 @@ from typing import Any, Optional
 
 import frontmatter
 
-MAGIC = 0x46554747  # "GGUF"
-VERSION = 3
+MAGIC = int.from_bytes("AUTO".encode(), byteorder="little", signed=False)
+VERSION = 1
 DEFAULT_ALIGNMENT = 32
-QUANT_VERSION = 2  # reference ggml.h
+QUANTIZATION_VERSION = 2  # reference ggml.h
 
 
 class MetadataKeys:
@@ -120,7 +121,7 @@ class MetadataKeys:
 
 @dataclass
 class Metadata:
-    # Authorship GGUFMetadata to be written to GGUF KV Store
+    # Authorship Metadata to be written to GGUF KV Store
     name: Optional[str] = None
     basename: Optional[str] = None
     finetune: Optional[str] = None
@@ -145,17 +146,17 @@ class Metadata:
         metadata_override_path: Optional[Path] = None,
         model_path: Optional[Path] = None,
         model_name: Optional[str] = None,
-    ) -> GGUFMetadata:
+    ) -> Metadata:
         # This grabs as many contextual authorship metadata as possible from the model repository
         # making any conversion as required to match the gguf kv store metadata format
         # as well as giving users the ability to override any authorship metadata that may be incorrect
 
-        # Create a new GGUFMetadata instance
-        metadata = GGUFMetadata()
+        # Create a new Metadata instance
+        metadata = Metadata()
 
         # load model folder model card if available
-        # Reference Model Card GGUFMetadata: https://github.com/huggingface/hub-docs/blob/main/modelcard.md?plain=1
-        model_card = GGUFMetadata.load_model_card(model_path)
+        # Reference Model Card Metadata: https://github.com/huggingface/hub-docs/blob/main/modelcard.md?plain=1
+        model_card = Metadata.load_model_card(model_path)
 
         for key, value in model_card.items():
             if key == "model_name" and isinstance(value, list) and len(value) >= 1:
@@ -178,7 +179,7 @@ class Metadata:
                 setattr(metadata, key, value)
 
         # load huggingface parameters if available
-        hf_params = GGUFMetadata.load_huggingface_parameters(model_path)
+        hf_params = Metadata.load_huggingface_parameters(model_path)
         hf_name_or_path = hf_params.get("_name_or_path")
         if metadata.name is None and hf_name_or_path is not None:
             metadata.name = Path(hf_name_or_path).name
@@ -189,9 +190,9 @@ class Metadata:
         if metadata.name is None and model_path is not None and model_path.exists():
             metadata.name = model_path.name
 
-        # GGUFMetadata Override File Provided
+        # Metadata Override File Provided
         if metadata_override_path is not None:
-            override = GGUFMetadata.load_metadata_override(metadata_override_path)
+            override = Metadata.load_metadata_override(metadata_override_path)
             # metadata.<attr> = override.get(Keys.General.<attr>, metadata.<attr>)
             for k, v in vars(GGUFMetadataKeys.General).items():
                 if not k.startswith("__"):
@@ -199,7 +200,7 @@ class Metadata:
                     val = override.get(v, getattr(metadata, key))
                     setattr(metadata, key, val)
 
-        # Direct GGUFMetadata Override (via direct cli argument)
+        # Direct Metadata Override (via direct cli argument)
         if model_name is not None:
             metadata.name = model_name
 
@@ -228,16 +229,16 @@ class Metadata:
     def load_metadata_override(
         metadata_override_path: Optional[Path] = None,
     ) -> dict[str, object]:
-        return GGUFMetadata._load_file(metadata_override_path)
+        return Metadata._load_file(metadata_override_path)
 
     @staticmethod
     def load_model_card(
         model_path: Optional[Path] = None,
     ) -> dict[str, object]:
-        return GGUFMetadata._load_file(model_path / "README.md")
+        return Metadata._load_file(model_path / "README.md")
 
     @staticmethod
     def load_huggingface_parameters(
         model_path: Optional[Path] = None,
     ) -> dict[str, object]:
-        return GGUFMetadata._load_file(model_path / "config.json")
+        return Metadata._load_file(model_path / "config.json")
