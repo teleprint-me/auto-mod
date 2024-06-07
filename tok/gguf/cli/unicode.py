@@ -4,6 +4,7 @@ Module: tok.gguf.cli.unicode
 
 import argparse
 import ctypes
+from pathlib import Path
 
 from ..unicode import CodepointFlags, CodepointProcessor
 
@@ -11,10 +12,30 @@ from ..unicode import CodepointFlags, CodepointProcessor
 
 
 def get_arguments() -> argparse.Namespace:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="Generate 'unicode-data.cpp'")
+
     # output path - default to stdout if no output path is given
-    # endianess - default to little endian if no endianess is given
+    parser.add_argument(
+        "--output-path",
+        type=str,
+        help="Output file path (default: stdout)",
+    )
+
+    # endianess - default to little-endian if no option provided
+    parser.add_argument(
+        "--big-endian",
+        action="store_true",
+        help="The byte order of the code points (default: False ('little'))",
+    )
+
     # max_codepoints - default to 0x110000 if no boundary is given
+    parser.add_argument(
+        "--max-codepoints",
+        type=int,
+        default=0x110000,
+        help="Maximum code points limit (default: 0x110000)",
+    )
+
     return parser.parse_args()
 
 
@@ -33,6 +54,8 @@ def build_unicode_source(processor: CodepointProcessor) -> str:
 
 def main():
     assert ctypes.sizeof(CodepointFlags) == 2
+
+    args = get_arguments()
 
     codepoint_processor = CodepointProcessor(0x110000)
 
