@@ -51,7 +51,7 @@ def get_arguments() -> argparse.Namespace:
 
 def build_unicode_data_h(max_codepoints: int = 0x110000) -> str:
     # NOTE: The resulting string is segmented to prevent formatting conflicts with braces
-    return """
+    unicode_data_h = """\
     // generated with python gguf.cli.unicode
     #ifndef UNICODE_DATA_H
     #define UNICODE_DATA_H
@@ -64,21 +64,21 @@ def build_unicode_data_h(max_codepoints: int = 0x110000) -> str:
     /**
      * @brief Represents a Unicode character range with normalized form D (NFD)
      */
-
     struct range_nfd {
         uint32_t first;
         uint32_t last;
         uint32_t nfd;
-    };
+    };\n
     """
-    f"""
-    static const uint32_t MAX_CODEPOINTS = {max_codepoints};
+
+    unicode_data_h += f"""\
+    static const uint32_t MAX_CODEPOINTS = {max_codepoints};\n
     """
-    """
+
+    unicode_data_h += """\
     /**
      * @brief Externally linked variables for Unicode data structures
      */
-
     extern const std::vector<std::pair<uint32_t, uint16_t>> unicode_ranges_flags;
     extern const std::unordered_set<uint32_t> unicode_set_whitespace;
     extern const std::unordered_map<uint32_t, uint32_t> unicode_map_lowercase;
@@ -86,6 +86,9 @@ def build_unicode_data_h(max_codepoints: int = 0x110000) -> str:
     extern const std::vector<range_nfd> unicode_ranges_nfd;
     #endif // UNICODE_DATA_H
     """
+
+    # NOTE: Format source text by line
+    return "\n".join([line.strip() for line in unicode_data_h.split("\n")])
 
 
 # TODO: define helper functions for setting mapping?
