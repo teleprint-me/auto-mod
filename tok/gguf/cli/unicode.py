@@ -163,7 +163,7 @@ def set_ranges_nfd(processor: CodepointProcessor) -> str:
     )
 
     for triple in processor.codepoint_ranges.nfd:
-        line = "{0x%06X, 0x%06X, 0x%06X}," % tuple
+        line = "{0x%06X, 0x%06X, 0x%06X}," % triple
         logger.debug(line)
         unicode_ranges_nfd += line
 
