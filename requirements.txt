@@ -3,12 +3,14 @@ pytest
 isort
 black
 tqdm
+inquirer
 blobfile
 pyarrow
 numpy
 sentencepiece
 tiktoken
 datasets
+safetensors
 tokenizers
 transformers
 huggingface_hub
