@@ -1,14 +1,17 @@
 """
 Module: tok.gguf.cli.unicode
+
+Generate 'unicode-data.cpp' and 'unicode-data.h'
 """
 
 import argparse
 import ctypes
+import logging
 from pathlib import Path
 
 from ..unicode import CodepointFlags, CodepointProcessor
 
-# Generate 'unicode-data.cpp'
+logger = logging.getLogger(__file__)
 
 
 def get_arguments() -> argparse.Namespace:
@@ -67,11 +70,25 @@ def build_unicode_data_h(max_codepoints: int = 0x110000) -> str:
 
 
 # TODO: define helper functions for setting mapping?
+def set_ranges_flags(processor: CodepointProcessor, byte_order: str = "little") -> str:
+    unicode_ranges_flags = "const std::vector<std::pair<uint32_t, uint16_t>> unicode_ranges_flags = {  // start, flags // last=next_start-1"
+    logger.debug(unicode_ranges_flags)
+
+    for codepoint, flags in processor.codepoint_ranges.flags:
+        flags = int.from_bytes(bytes(flags), byte_order)
+        line = "{0x%06X, 0x%04X}," % (codepoint, flags)
+        logger.debug(line)
+        unicode_ranges_flags += line
+
+    line = "};\n"
+    logger.debug(line)
+    unicode_ranges_flags += line
+    return unicode_ranges_flags
 
 
 def build_unicode_data_cpp(processor: CodepointProcessor) -> str:
     # define includes
-    return """
+    unicode_data_cpp = """
     // generated with python gguf.cli.unicode
 
     #include "unicode-data.h"
@@ -81,12 +98,14 @@ def build_unicode_data_cpp(processor: CodepointProcessor) -> str:
     #include <unordered_map>
     #include <unordered_set>
     """
+    logger.debug(unicode_data_cpp)
+    unicode_data_cpp += set_ranges_flags(processor)
     # set ranges flags
     # set whitespace
     # map lowercase
     # map uppercase
     # set ranges nfd
-    pass
+    return unicode_data_cpp
 
 
 def main():
@@ -98,6 +117,12 @@ def main():
     processor.process_unicode()
     processor.group_flag_ranges()
     processor.group_nfd_ranges()
+
+    # build the header file
+    unicode_data_h = build_unicode_data_h(args.max_codepoints)
+
+    # build the source file
+    unicode_data_cpp = build_unicode_data_cpp(processor)
 
     def out(line=""):
         print(line, end="\n")  # noqa
