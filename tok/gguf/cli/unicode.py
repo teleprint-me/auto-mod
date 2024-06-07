@@ -190,7 +190,7 @@ def main():
 
     args = get_arguments()
 
-    if args.verbose:
+    if args.verbose or not args.output_path:
         logging.basicConfig(level=logging.DEBUG)
     else:
         logging.basicConfig(level=logging.INFO)
@@ -205,6 +205,16 @@ def main():
 
     # build the source file
     unicode_data_cpp = build_unicode_data_cpp(processor)
+
+    if args.output_path:
+        header_file = f"{args.output_path}/unicode-data.h"
+        cpp_file = f"{args.output_path}/unicode-data.cpp"
+
+        with open(header_file, "w") as f:
+            f.write(unicode_data_h)
+
+        with open(cpp_file, "w") as f:
+            f.write(unicode_data_cpp)
 
 
 if __name__ == "__main__":
