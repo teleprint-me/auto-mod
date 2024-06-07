@@ -19,6 +19,12 @@ def get_arguments() -> argparse.Namespace:
         description="Generate 'unicode-data.cpp' and 'unicode-data.h'"
     )
 
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Output generated source text (default: False)",
+    )
+
     # output path - default to stdout if no output path is given
     parser.add_argument(
         "--output-path",
@@ -112,6 +118,11 @@ def main():
     assert ctypes.sizeof(CodepointFlags) == 2
 
     args = get_arguments()
+
+    if args.verbose:
+        logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.INFO)
 
     processor = CodepointProcessor(args.max_codepoints)
     processor.process_unicode()
