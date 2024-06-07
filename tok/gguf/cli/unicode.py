@@ -53,12 +53,17 @@ def build_unicode_data_h(max_codepoints: int = 0x110000) -> str:
     # NOTE: The resulting string is segmented to prevent formatting conflicts with braces
     return """
     // generated with python gguf.cli.unicode
-    #pragma once
+    #ifndef UNICODE_DATA_H
+    #define UNICODE_DATA_H
 
     #include <cstdint>
     #include <vector>
     #include <unordered_map>
     #include <unordered_set>
+
+    /**
+     * @brief Represents a Unicode character range with normalized form D (NFD)
+     */
 
     struct range_nfd {
         uint32_t first;
@@ -70,11 +75,16 @@ def build_unicode_data_h(max_codepoints: int = 0x110000) -> str:
     static const uint32_t MAX_CODEPOINTS = {max_codepoints};
     """
     """
+    /**
+     * @brief Externally linked variables for Unicode data structures
+     */
+
     extern const std::vector<std::pair<uint32_t, uint16_t>> unicode_ranges_flags;
     extern const std::unordered_set<uint32_t> unicode_set_whitespace;
     extern const std::unordered_map<uint32_t, uint32_t> unicode_map_lowercase;
     extern const std::unordered_map<uint32_t, uint32_t> unicode_map_uppercase;
     extern const std::vector<range_nfd> unicode_ranges_nfd;
+    #endif // UNICODE_DATA_H
     """
 
 
