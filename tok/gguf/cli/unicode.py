@@ -114,6 +114,27 @@ def set_unicode_whitespace(processor: CodepointProcessor) -> str:
     return unicode_set_whitespace
 
 
+def set_unicode_lowercase(processor: CodepointProcessor) -> str:
+    out("const std::unordered_map<uint32_t, uint32_t> unicode_map_lowercase = {")
+    for tuple in processor.unicode_table.lowercase:
+        out("{0x%06X, 0x%06X}," % tuple)
+    out("};\n")
+
+
+def set_unicode_uppercase(processor: CodepointProcessor) -> str:
+    out("const std::unordered_map<uint32_t, uint32_t> unicode_map_uppercase = {")
+    for tuple in processor.unicode_table.uppercase:
+        out("{0x%06X, 0x%06X}," % tuple)
+    out("};\n")
+
+
+def set_ranges_nfd(processor: CodepointProcessor) -> str:
+    out("const std::vector<range_nfd> unicode_ranges_nfd = {  // start, last, nfd")
+    for triple in processor.codepoint_ranges.nfd:
+        out("{0x%06X, 0x%06X, 0x%06X}," % triple)
+    out("};\n")
+
+
 def build_unicode_data_cpp(processor: CodepointProcessor) -> str:
     # define includes
     unicode_data_cpp = """
