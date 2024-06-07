@@ -6,6 +6,8 @@
 /data
 /specs
 
+src/unicode-data.*
+
 # ignore local files
 *.ini
 *.txt
