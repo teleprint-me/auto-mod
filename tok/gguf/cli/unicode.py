@@ -179,49 +179,6 @@ def main():
     # build the source file
     unicode_data_cpp = build_unicode_data_cpp(processor)
 
-    def out(line=""):
-        print(line, end="\n")  # noqa
-
-    out(
-        """\
-    // generated with scripts/gen-unicode-data.py
-
-    #include "unicode-data.h"
-
-    #include <cstdint>
-    #include <vector>
-    #include <unordered_map>
-    #include <unordered_set>
-    """
-    )
-
-    out(
-        "const std::vector<std::pair<uint32_t, uint16_t>> unicode_ranges_flags = {  // start, flags // last=next_start-1"
-    )
-    for codepoint, flags in processor.codepoint_ranges.flags:
-        flags = int.from_bytes(bytes(flags), "little")
-        out("{0x%06X, 0x%04X}," % (codepoint, flags))
-    out("};\n")
-
-    out("const std::unordered_set<uint32_t> unicode_set_whitespace = {")
-    out(", ".join("0x%06X" % cpt for cpt in processor.unicode_table.whitespace))
-    out("};\n")
-
-    out("const std::unordered_map<uint32_t, uint32_t> unicode_map_lowercase = {")
-    for tuple in processor.unicode_table.lowercase:
-        out("{0x%06X, 0x%06X}," % tuple)
-    out("};\n")
-
-    out("const std::unordered_map<uint32_t, uint32_t> unicode_map_uppercase = {")
-    for tuple in processor.unicode_table.uppercase:
-        out("{0x%06X, 0x%06X}," % tuple)
-    out("};\n")
-
-    out("const std::vector<range_nfd> unicode_ranges_nfd = {  // start, last, nfd")
-    for triple in processor.codepoint_ranges.nfd:
-        out("{0x%06X, 0x%06X, 0x%06X}," % triple)
-    out("};\n")
-
 
 if __name__ == "__main__":
     main()
