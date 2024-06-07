@@ -101,7 +101,7 @@ class UnicodeTable:
     whitespace: list[int] = dataclasses.field(default_factory=list)
     lowercase: list[tuple[int, int]] = dataclasses.field(default_factory=list)
     uppercase: list[tuple[int, int]] = dataclasses.field(default_factory=list)
-    nfd: list[tuple[int, int]] = dataclasses.field(default_factor=list)
+    nfd: list[tuple[int, int]] = dataclasses.field(default_factory=list)
 
 
 @dataclasses.dataclass
@@ -144,7 +144,7 @@ class CodepointRanges:
     """
 
     flags: list[tuple[int, int]] = dataclasses.field(default_factory=list)
-    nfd: list[tuple[int, int, int]] = dataclasses.field(default_factor=list)
+    nfd: list[tuple[int, int, int]] = dataclasses.field(default_factory=list)
 
 
 class CodepointProcessor:
