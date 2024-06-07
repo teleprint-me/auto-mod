@@ -118,9 +118,9 @@ def set_unicode_whitespace(processor: CodepointProcessor) -> str:
     logger.debug(unicode_set_whitespace)
 
     for codepoint in processor.unicode_table.whitespace:
-        line = ", ".join("0x%06X" % codepoint)
+        line = "0x%06X" % codepoint
         logger.debug(line)
-        unicode_set_whitespace += line
+        unicode_set_whitespace += f"{line}, "
 
     line = "};\n"
     logger.debug(line)
