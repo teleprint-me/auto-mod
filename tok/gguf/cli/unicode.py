@@ -94,7 +94,7 @@ def build_unicode_data_h(max_codepoints: int = 0x110000) -> str:
 # TODO: define helper functions for setting mapping?
 def set_ranges_flags(processor: CodepointProcessor, byte_order: str = "little") -> str:
     unicode_ranges_flags = (
-        "// start, flags // last=next_start-1\n"
+        "// codepoint, flag // last=next_start-1\n"
         "const std::vector<std::pair<uint32_t, uint16_t>> unicode_ranges_flags = {\n"
     )
     logger.debug(unicode_ranges_flags)
@@ -105,7 +105,7 @@ def set_ranges_flags(processor: CodepointProcessor, byte_order: str = "little") 
         logger.debug(line)
         unicode_ranges_flags += line
 
-    line = "};\n"
+    line = "};\n\n"
     logger.debug(line)
 
     return unicode_ranges_flags + line
@@ -122,7 +122,7 @@ def set_unicode_whitespace(processor: CodepointProcessor) -> str:
         logger.debug(line)
         unicode_set_whitespace += f"{line}, "
 
-    line = "};\n"
+    line = "};\n\n"
     logger.debug(line)
 
     return unicode_set_whitespace + line
@@ -138,7 +138,7 @@ def set_unicode_lowercase(processor: CodepointProcessor) -> str:
         logger.debug(line)
         unicode_map_lowercase += line
 
-    line = "};\n"
+    line = "};\n\n"
     logger.debug(line)
 
     return unicode_map_lowercase + line
@@ -154,7 +154,7 @@ def set_unicode_uppercase(processor: CodepointProcessor) -> str:
         logger.debug(line)
         unicode_map_uppercase += line
 
-    line = "};\n"
+    line = "};\n\n"
     logger.debug(line)
 
     return unicode_map_uppercase + line
@@ -186,7 +186,7 @@ def build_unicode_data_cpp(processor: CodepointProcessor) -> str:
     #include <cstdint>
     #include <vector>
     #include <unordered_map>
-    #include <unordered_set>
+    #include <unordered_set>\n
     """
     logger.debug(unicode_data_cpp)
 
