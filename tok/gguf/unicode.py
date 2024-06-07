@@ -1,15 +1,19 @@
 """
 Module: tok.gguf.unicode
 
-Reference Unicode Chapter 3 Unicode Conformance
-https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf
+References:
+- Unicode Chapter 3 Unicode Conformance
+    - https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf
+- Properties accessible through \\p{} and \\P{}
+    - https://perldoc.perl.org/perluniprops
+- Ctypes
+    - https://docs.python.org/3/library/ctypes.html
 """
 
 import ctypes
 import dataclasses
 
 
-# NOTE: Original script has a typo, e.g. CoodepointFlags
 class CodepointFlags(ctypes.Structure):
     """
     Represents Unicode character properties as defined by the Unicode Technical Standard #36 (Unicode 5.2) using Python's ctypes library,
