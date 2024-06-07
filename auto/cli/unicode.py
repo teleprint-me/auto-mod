@@ -1,5 +1,5 @@
 """
-Module: tok.gguf.cli.unicode
+Script: auto.cli.unicode
 
 Generate 'unicode-data.cpp' and 'unicode-data.h'
 """

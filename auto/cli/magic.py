@@ -1,5 +1,9 @@
-import struct
+"""
+Script: auto.cli.magic
+"""
+
 import argparse
+import struct
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-f", "--file-path", type=str, default="my_binary_file.bin")
