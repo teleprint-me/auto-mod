@@ -12,7 +12,9 @@ from ..unicode import CodepointFlags, CodepointProcessor
 
 
 def get_arguments() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Generate 'unicode-data.cpp'")
+    parser = argparse.ArgumentParser(
+        description="Generate 'unicode-data.cpp' and 'unicode-data.h'"
+    )
 
     # output path - default to stdout if no output path is given
     parser.add_argument(
@@ -39,11 +41,46 @@ def get_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def build_unicode_data_h(max_codepoints: int = 0x110000) -> str:
+    return """
+    #pragma once
+
+    #include <cstdint>
+    #include <vector>
+    #include <unordered_map>
+    #include <unordered_set>
+
+    struct range_nfd {
+        uint32_t first;
+        uint32_t last;
+        uint32_t nfd;
+    };
+    """
+    f"static const uint32_t MAX_CODEPOINTS = {max_codepoints};"
+    """
+    extern const std::vector<std::pair<uint32_t, uint16_t>> unicode_ranges_flags;
+    extern const std::unordered_set<uint32_t> unicode_set_whitespace;
+    extern const std::unordered_map<uint32_t, uint32_t> unicode_map_lowercase;
+    extern const std::unordered_map<uint32_t, uint32_t> unicode_map_uppercase;
+    extern const std::vector<range_nfd> unicode_ranges_nfd;
+    """
+
+
 # TODO: define helper functions for setting mapping?
 
 
-def build_unicode_source(processor: CodepointProcessor) -> str:
+def build_unicode_data_cpp(processor: CodepointProcessor) -> str:
     # define includes
+    return """
+    // generated with python gguf.cli.unicode
+
+    #include "unicode-data.h"
+
+    #include <cstdint>
+    #include <vector>
+    #include <unordered_map>
+    #include <unordered_set>
+    """
     # set ranges flags
     # set whitespace
     # map lowercase
@@ -57,7 +94,10 @@ def main():
 
     args = get_arguments()
 
-    codepoint_processor = CodepointProcessor(0x110000)
+    processor = CodepointProcessor(args.max_codepoints)
+    processor.process_unicode()
+    processor.group_flag_ranges()
+    processor.group_nfd_ranges()
 
     def out(line=""):
         print(line, end="\n")  # noqa
@@ -78,31 +118,27 @@ def main():
     out(
         "const std::vector<std::pair<uint32_t, uint16_t>> unicode_ranges_flags = {  // start, flags // last=next_start-1"
     )
-    for codepoint, flags in codepoint_processor.codepoint_ranges.flags:
+    for codepoint, flags in processor.codepoint_ranges.flags:
         flags = int.from_bytes(bytes(flags), "little")
         out("{0x%06X, 0x%04X}," % (codepoint, flags))
     out("};\n")
 
     out("const std::unordered_set<uint32_t> unicode_set_whitespace = {")
-    out(
-        ", ".join(
-            "0x%06X" % cpt for cpt in codepoint_processor.unicode_table.whitespace
-        )
-    )
+    out(", ".join("0x%06X" % cpt for cpt in processor.unicode_table.whitespace))
     out("};\n")
 
     out("const std::unordered_map<uint32_t, uint32_t> unicode_map_lowercase = {")
-    for tuple in codepoint_processor.unicode_table.lowercase:
+    for tuple in processor.unicode_table.lowercase:
         out("{0x%06X, 0x%06X}," % tuple)
     out("};\n")
 
     out("const std::unordered_map<uint32_t, uint32_t> unicode_map_uppercase = {")
-    for tuple in codepoint_processor.unicode_table.uppercase:
+    for tuple in processor.unicode_table.uppercase:
         out("{0x%06X, 0x%06X}," % tuple)
     out("};\n")
 
     out("const std::vector<range_nfd> unicode_ranges_nfd = {  // start, last, nfd")
-    for triple in codepoint_processor.codepoint_ranges.nfd:
+    for triple in processor.codepoint_ranges.nfd:
         out("{0x%06X, 0x%06X, 0x%06X}," % triple)
     out("};\n")
 
