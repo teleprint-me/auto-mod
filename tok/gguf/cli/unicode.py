@@ -2,14 +2,7 @@ import ctypes
 import unicodedata
 
 import regex
-import dataclasses
-from ..unicode import CodepointFlags, UnicodeTable
-
-
-@dataclasses.dataclass
-class CodepointRanges:
-    flags: list[tuple[int, int]]
-    nfd: list[tuple[int, int, int]]
+from ..unicode import CodepointFlags, UnicodeTable, CodepointRanges
 
 
 class CodepointProcessor:

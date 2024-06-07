@@ -95,3 +95,46 @@ class UnicodeTable:
     lowercase: list[tuple[int, int]] = dataclasses.field(default_factory=list)
     uppercase: list[tuple[int, int]] = dataclasses.field(default_factory=list)
     nfd: list[tuple[int, int]] = dataclasses.field(default_factor=list)
+
+
+@dataclasses.dataclass
+class CodepointRanges:
+    """
+    The `CodepointRanges` class serves as a container for precomputed character ranges based on specific Unicode properties, such as character flags and normalized form D (NFD) mappings.
+
+    This class is useful when working with large amounts of text data that require frequent lookups or manipulations based on Unicode properties,
+        as it provides constant-time access to precomputed ranges instead of having to perform expensive computations at runtime.
+
+    The `CodepointRanges` can be initialized with empty lists for each property (flags and nfd),
+        but the recommended way is to load the necessary data from external files or databases during initialization to ensure accurate and up-to-date information.
+
+    Here's an example of how you can create a `CodepointRanges` instance:
+
+        ```python
+        from tok.gguf import unicode
+
+        ranges = unicode.CodepointRanges()
+
+        # Load data for each property
+        with open("flags_ranges.txt", "r") as f:
+            flagged_codes = [tuple(map(int, line.split("-"))) for line in f]
+            ranges.flags = flagged_codes
+
+        # ... continue loading other properties from external files or databases
+
+        ```
+
+    Once the `CodepointRanges` instance is initialized, you can access its properties using standard Python attribute syntax:
+
+        ```python
+        for range in ranges.flags:
+            start, end = range
+            print(f"Flagged character range {start} - {end}")
+
+        # ...
+
+        ```
+    """
+
+    flags: list[tuple[int, int]] = dataclasses.field(default_factory=list)
+    nfd: list[tuple[int, int, int]] = dataclasses.field(default_factor=list)
