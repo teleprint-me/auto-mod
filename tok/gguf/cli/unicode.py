@@ -1,8 +1,21 @@
+"""
+Module: tok.gguf.cli.unicode
+"""
+
+import argparse
 import ctypes
 
 from ..unicode import CodepointFlags, CodepointProcessor
 
 # Generate 'unicode-data.cpp'
+
+
+def get_arguments() -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    # output path - default to stdout if no output path is given
+    # endianess - default to little endian if no endianess is given
+    # max_codepoints - default to 0x110000 if no boundary is given
+    return parser.parse_args()
 
 
 def main():
