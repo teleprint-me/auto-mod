@@ -81,7 +81,7 @@ def build_unicode_data_h(max_codepoints: int = 0x110000) -> str:
 def set_ranges_flags(processor: CodepointProcessor, byte_order: str = "little") -> str:
     unicode_ranges_flags = (
         "// start, flags // last=next_start-1\n"
-        "const std::vector<std::pair<uint32_t, uint16_t>> unicode_ranges_flags = {"
+        "const std::vector<std::pair<uint32_t, uint16_t>> unicode_ranges_flags = {\n"
     )
     logger.debug(unicode_ranges_flags)
 
@@ -93,13 +93,13 @@ def set_ranges_flags(processor: CodepointProcessor, byte_order: str = "little") 
 
     line = "};\n"
     logger.debug(line)
-    unicode_ranges_flags += line
-    return unicode_ranges_flags
+
+    return unicode_ranges_flags + line
 
 
 def set_unicode_whitespace(processor: CodepointProcessor) -> str:
     unicode_set_whitespace = (
-        "const std::unordered_set<uint32_t> unicode_set_whitespace = {"
+        "const std::unordered_set<uint32_t> unicode_set_whitespace = {\n"
     )
     logger.debug(unicode_set_whitespace)
 
@@ -110,29 +110,56 @@ def set_unicode_whitespace(processor: CodepointProcessor) -> str:
 
     line = "};\n"
     logger.debug(line)
-    unicode_set_whitespace += line
-    return unicode_set_whitespace
+
+    return unicode_set_whitespace + line
 
 
 def set_unicode_lowercase(processor: CodepointProcessor) -> str:
-    out("const std::unordered_map<uint32_t, uint32_t> unicode_map_lowercase = {")
+    unicode_map_lowercase = (
+        "const std::unordered_map<uint32_t, uint32_t> unicode_map_lowercase = {\n"
+    )
+
     for tuple in processor.unicode_table.lowercase:
-        out("{0x%06X, 0x%06X}," % tuple)
-    out("};\n")
+        line = "{0x%06X, 0x%06X}," % tuple
+        logger.debug(line)
+        unicode_map_lowercase += line
+
+    line = "};\n"
+    logger.debug(line)
+
+    return unicode_map_lowercase + line
 
 
 def set_unicode_uppercase(processor: CodepointProcessor) -> str:
-    out("const std::unordered_map<uint32_t, uint32_t> unicode_map_uppercase = {")
+    unicode_map_uppercase = (
+        "const std::unordered_map<uint32_t, uint32_t> unicode_map_uppercase = {\n"
+    )
+
     for tuple in processor.unicode_table.uppercase:
-        out("{0x%06X, 0x%06X}," % tuple)
-    out("};\n")
+        line = "{0x%06X, 0x%06X}," % tuple
+        logger.debug(line)
+        unicode_map_uppercase += line
+
+    line = "};\n"
+    logger.debug(line)
+
+    return unicode_map_uppercase + line
 
 
 def set_ranges_nfd(processor: CodepointProcessor) -> str:
-    out("const std::vector<range_nfd> unicode_ranges_nfd = {  // start, last, nfd")
+    unicode_ranges_nfd = (
+        "// start, last, nfd\n" "const std::vector<range_nfd> unicode_ranges_nfd = {\n"
+    )
+
     for triple in processor.codepoint_ranges.nfd:
-        out("{0x%06X, 0x%06X, 0x%06X}," % triple)
-    out("};\n")
+        line = "{0x%06X, 0x%06X, 0x%06X}," % tuple
+        logger.debug(line)
+        unicode_ranges_nfd += line
+
+    line = "};\n"
+    logger.debug(line)
+
+    return unicode_ranges_nfd + line
 
 
 def build_unicode_data_cpp(processor: CodepointProcessor) -> str:
@@ -148,13 +175,13 @@ def build_unicode_data_cpp(processor: CodepointProcessor) -> str:
     #include <unordered_set>
     """
     logger.debug(unicode_data_cpp)
+
     unicode_data_cpp += set_ranges_flags(processor)
     unicode_data_cpp += set_unicode_whitespace(processor)
-    # set ranges flags
-    # set whitespace
-    # map lowercase
-    # map uppercase
-    # set ranges nfd
+    unicode_data_cpp += set_unicode_lowercase(processor)
+    unicode_data_cpp += set_unicode_uppercase(processor)
+    unicode_data_cpp += set_ranges_nfd(processor)
+
     return unicode_data_cpp
 
 
