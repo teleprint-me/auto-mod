@@ -6,6 +6,39 @@ from ..unicode import CodepointFlags, UnicodeTable, CodepointRanges
 
 
 class CodepointProcessor:
+    """
+    The `CodepointProcessor` class precomputes various data related to Unicode characters, such as flags, whitespace codes, lowercase and uppercase character ranges, normalized form D (NFD) mappings, etc.,
+        which can be used to improve the performance of text processing tasks. This class is primarily useful when working with large amounts of text data that require frequent lookups or manipulations based on Unicode properties,
+            as it provides constant-time access to precomputed data instead of having to perform expensive computations at runtime.
+
+    The `CodepointProcessor` can be initialized by specifying the maximum number of code points (Unicode characters) to process. If no limit is provided, all valid Unicode characters will be processed up to U+10FFFF.
+
+    Once instantiated, you should call the `process_unicode()` method to compute and store precomputed data for each character within its defined limits. After processing,
+        you can access various properties such as flags, whitespace codes, lowercase/uppercase ranges, normalized form D mappings, etc., using standard Python attribute syntax:
+
+        ```python
+        from tok.gguf import unicode
+
+        processor = unicode.CodepointProcessor()
+        processor.process_unicode()
+
+        if 9 == processor.unicode_table.whitespace[0]:
+            print("The first whitespace code is a tab.")
+
+        lowercase_range = (processor.unicode_table.lowercase[0][0],
+                           processor.unicode_table.lowercase[-1][1])
+
+        uppercase_range = (processor.unicode_table.uppercase[0][0],
+                           processor.unicode_table.uppercase[-1][1])
+
+        print(f"Lowercase range: {ord('a')} - {lowercase_range[1]}")
+
+        print(f"Uppercase range: {ord('A')} - {uppercase_range[1]}")
+
+        # ...
+        ```
+    """
+
     def __init__(self, max_codepoints: None | int = 0x110000):
         # Set the unicode upper limit
         self.MAX_CODEPOINTS = max_codepoints
