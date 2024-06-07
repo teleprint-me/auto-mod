@@ -52,6 +52,7 @@ def get_arguments() -> argparse.Namespace:
 def build_unicode_data_h(max_codepoints: int = 0x110000) -> str:
     # NOTE: The resulting string is segmented to prevent formatting conflicts with braces
     return """
+    // generated with python gguf.cli.unicode
     #pragma once
 
     #include <cstdint>
