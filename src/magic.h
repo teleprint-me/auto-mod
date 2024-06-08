@@ -6,7 +6,7 @@
 
 #define MAGIC_HEADER 4
 
-typedef enum magic_file_type {
+enum magic_file_t {
     MAGIC_FILE_TYPE_F32,
     MAGIC_FILE_TYPE_F16,
     MAGIC_FILE_TYPE_Q8_0,
@@ -15,9 +15,9 @@ typedef enum magic_file_type {
     MAGIC_FILE_TYPE_I16,
     MAGIC_FILE_TYPE_I8,
     MAGIC_FILE_TYPE_COUNT,
-} magic_file_t;
+};
 
-typedef enum magic_value_type {
+enum magic_value_t {
     MAGIC_VALUE_TYPE_FLOAT32,
     MAGIC_VALUE_TYPE_FLOAT16,
     MAGIC_VALUE_TYPE_QUANT8_0,
@@ -29,44 +29,40 @@ typedef enum magic_value_type {
     MAGIC_VALUE_TYPE_STRING,
     MAGIC_VALUE_TYPE_ARRAY,
     MAGIC_VALUE_TYPE_OBJECT,
-} magic_value_t;
+};
 
-typedef struct magic_string_type {
+struct magic_string_t {
     unsigned long int length;
     char*             string;
-} magic_string_t;
+};
 
-typedef struct magic_array_type {
-    magic_value_t type;
-    size_t        length;
-    magic_data_t* array;
-} magic_array_t;
+union magic_data_t {
+    float                 float32;
+    _Float16              float16;
+    int32_t               int32;
+    int16_t               int16;
+    int8_t                int8;
+    bool                  boolean;
+    struct magic_string_t string;
+};
 
-typedef union magic_data_type {
-    float          float32;
-    _Float16       float16;
-    int32_t        int32;
-    int16_t        int16;
-    int8_t         int8;
-    bool           boolean;
-    magic_string_t string;
-} magic_data_t;
+struct magic_array_t {
+    magic_value_t       type;
+    size_t              length;
+    union magic_data_t* array;
+};
 
-typedef struct magic_header_type {
+struct magic_header_t {
+    char         header[MAGIC_HEADER];
     unsigned int value;
     unsigned int version;
     unsigned int tensor_count;
-} magic_header_t;
-
-struct magic_file {
-    char*        path;
-    FILE*        file;
-    char         header[MAGIC_HEADER];
-    unsigned int value;
 };
 
-struct options {
-    struct magic_file magic;
+struct magic_file {
+    char*                  path;
+    FILE*                  file;
+    struct magic_header_t* header;
 };
 
 #endif // AUTO_MOD_MAGIC_H
