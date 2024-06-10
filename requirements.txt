@@ -15,3 +15,4 @@ tokenizers
 transformers
 huggingface_hub
 frontmatter
+texttable
