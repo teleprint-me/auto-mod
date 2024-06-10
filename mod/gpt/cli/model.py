@@ -4,18 +4,18 @@ import argparse
 import texttable
 
 
-def print_csv(csv_table: list[list[str]], width: int = 240) -> None:
+def print_table(table_data: list[list[str]], width: int = 240) -> None:
     """Prints a formatted table of the CSV contents to the console.
 
     Args:
-        csv_table: The table to print.
+        table_data: The table to print.
         width (optional): The width of the table. Defaults to 240.
     """
     tt = texttable.Texttable(width)
     tt.set_deco(texttable.Texttable.HEADER)
-    tt.set_cols_dtype(["t"] * len(csv_table[0]))
-    tt.set_cols_align(["r"] * len(csv_table[0]))
-    tt.add_rows(csv_table)
+    tt.set_cols_dtype(["t"] * len(table_data[0]))
+    tt.set_cols_align(["l"] * len(table_data[0]))
+    tt.add_rows(table_data)
     print(tt.draw())
 
 
@@ -49,9 +49,9 @@ state = gpt.state_dict()
 if args.tensors:
     print("Tensor Information:")
     table = texttable.Texttable()
-    for k, v in state.items():
-        if isinstance(v, torch.Tensor):
-            print(f"k: {k}", "|", f"v.shape: {v.shape}")
+    model = [[k, v.shape] for k, v in state.items() if isinstance(v, torch.Tensor)]
+    model.insert(0, ["Tensor Name", "Tensor Shape"])
+    print_table(model)
 
 # Dump tensor information by name
 if args.tensor_name:
