@@ -59,16 +59,16 @@ class Norm(torch.nn.Module):
         return self.g * (x - u) / (s + self.eps) + self.b
 
 
-def split_states(x, n):
+def split_states(x: torch.Tensor, n) -> torch.Tensor:
     """Reshape the last dimension of x into [n, x.shape[-1]/n]."""
-    *start, m = shape_list(x)
-    return tf.reshape(x, start + [n, m // n])
+    *start, m = x.shape
+    return x.view(*start, n, m // n)
 
 
-def merge_states(x):
+def merge_states(x: torch.Tensor) -> torch.Tensor:
     """Smash the last two dimensions of x into a single dimension."""
-    *start, a, b = shape_list(x)
-    return tf.reshape(x, start + [a * b])
+    *start, a, b = x.shape
+    return x.view(*start, a * b)
 
 
 def conv1d(x, scope, nf, *, w_init_stdev=0.02):
