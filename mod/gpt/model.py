@@ -26,8 +26,12 @@ def softmax(x: torch.Tensor, dim: int = -1):
     return ex / torch.sum(ex, dim=dim, keepdim=True)
 
 
-def gelu(x):
-    return 0.5 * x * (1 + tf.tanh(np.sqrt(2 / np.pi) * (x + 0.044715 * tf.pow(x, 3))))
+def gelu(x: torch.Tensor):
+    return (
+        0.5
+        * x
+        * (1 + torch.tanh(((2 / np.pi) ** 0.5) * (x + 0.044715 * torch.pow(x, 3))))
+    )
 
 
 def norm(x, scope, *, axis=-1, epsilon=1e-5):
