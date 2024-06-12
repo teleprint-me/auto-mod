@@ -90,15 +90,14 @@ class Conv1D(torch.nn.Module):
         return self.conv(x)
 
 
-def attention_mask(nd, ns, *, dtype):
-    """1's in the lower triangle, counting from the lower right corner.
-
-    Same as tf.matrix_band_part(tf.ones([nd, ns]), -1, ns-nd), but doesn't produce garbage on TPUs.
-    """
-    i = tf.range(nd)[:, None]
-    j = tf.range(ns)
+def attention_mask(
+    nd: int, ns: int, dtype: torch.dtype = torch.bfloat16
+) -> torch.Tensor:
+    """1's in the lower triangle, counting from the lower right corner."""
+    i = torch.arange(nd)[:, None]
+    j = torch.arange(ns).view(-1)
     m = i >= j - ns + nd
-    return tf.cast(m, dtype)
+    return m.to(dtype)
 
 
 def attn(x, scope, n_state, *, past, hparams):
