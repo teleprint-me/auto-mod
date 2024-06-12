@@ -1,8 +1,8 @@
-import numpy as np
-import torch
-from tensorflow.contrib.training import HParams
 from dataclasses import dataclass
 from typing import Sequence
+
+import numpy as np
+import torch
 
 
 @dataclass
