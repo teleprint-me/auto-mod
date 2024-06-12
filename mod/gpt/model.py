@@ -20,10 +20,10 @@ def shape_list(x):
     return [dynamic[i] if s is None else s for i, s in enumerate(static)]
 
 
-def softmax(x, axis=-1):
-    x = x - tf.reduce_max(x, axis=axis, keepdims=True)
-    ex = tf.exp(x)
-    return ex / tf.reduce_sum(ex, axis=axis, keepdims=True)
+def softmax(x: torch.Tensor, dim: int = -1):
+    x = x - torch.max(x, dim=dim, keepdim=True)
+    ex = torch.exp(x)
+    return ex / torch.sum(ex, dim=dim, keepdim=True)
 
 
 def gelu(x):
