@@ -14,20 +14,6 @@ class Config:
     n_embed: int = 264
 
 
-# TODO: This function should most likely be removed.
-# NOTE:
-# In TensorFlow, `x.shape.as_list()` returns a list of integers or None entries (for unknown dimensions) representing the shape of tensor `x`.
-# However, because TensorFlow operates in a static computational graph and some shapes may be only known at runtime, this method can return partially defined shapes that contain both concrete values and symbols for unknown ones.
-# The `shape_list` function is used to handle partially-defined shapes cleanly by returning the dynamic shape (obtained using `tf.shape(x)`) whenever a dimension in `static` has an unspecified value of None, otherwise it returns the statically known size from `as_list()`.
-# In PyTorch, we don't have this issue as all shapes are known at runtime and can be accessed directly using Python indexing (e.g., `x.shape[i]`).
-# So we might not need an equivalent function in the ported codebase for handling dynamically-shaped tensors with TensorFlow, unless there's some specific part of the original code where it's necessary to deal with dynamic shapes explicitly (which seems unlikely given what we know about GPT-2 models so far).
-# def shape_list(x):
-#     """Deal with dynamic shape in tensorflow cleanly."""
-#     static = x.shape.as_list()
-#     dynamic = tf.shape(x)
-#     return [dynamic[i] if s is None else s for i, s in enumerate(static)]
-
-
 def softmax(x: torch.Tensor, dim: int = -1) -> torch.Tensor:
     x = x - torch.max(x, dim=dim, keepdim=True)
     ex = torch.exp(x)
@@ -59,18 +45,6 @@ class Norm(torch.nn.Module):
         return self.g * (x - u) / (s + self.eps) + self.b
 
 
-def split_states(x: torch.Tensor, n) -> torch.Tensor:
-    """Reshape the last dimension of x into [n, x.shape[-1]/n]."""
-    *start, m = x.shape
-    return x.view(*start, n, m // n)
-
-
-def merge_states(x: torch.Tensor) -> torch.Tensor:
-    """Smash the last two dimensions of x into a single dimension."""
-    *start, a, b = x.shape
-    return x.view(*start, a * b)
-
-
 class Conv1D(torch.nn.Module):
     def __init__(
         self,
@@ -88,6 +62,26 @@ class Conv1D(torch.nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.conv(x)
+
+
+# TODO: This function will be removed once the code is fully ported over.
+# def shape_list(x):
+#     """Deal with dynamic shape in tensorflow cleanly."""
+#     static = x.shape.as_list()
+#     dynamic = tf.shape(x)
+#     return [dynamic[i] if s is None else s for i, s in enumerate(static)]
+
+
+def split_states(x: torch.Tensor, n) -> torch.Tensor:
+    """Reshape the last dimension of x into [n, x.shape[-1]/n]."""
+    *start, m = x.shape
+    return x.view(*start, n, m // n)
+
+
+def merge_states(x: torch.Tensor) -> torch.Tensor:
+    """Smash the last two dimensions of x into a single dimension."""
+    *start, a, b = x.shape
+    return x.view(*start, a * b)
 
 
 def attention_mask(
