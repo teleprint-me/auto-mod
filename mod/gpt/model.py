@@ -34,17 +34,21 @@ def gelu(x: torch.Tensor):
     )
 
 
-def norm(x, scope, *, axis=-1, epsilon=1e-5):
-    """Normalize to mean = 0, std = 1, then do a diagonal affine transform."""
-    with tf.variable_scope(scope):
-        n_state = x.shape[-1].value
-        g = tf.get_variable("g", [n_state], initializer=tf.constant_initializer(1))
-        b = tf.get_variable("b", [n_state], initializer=tf.constant_initializer(0))
-        u = tf.reduce_mean(x, axis=axis, keepdims=True)
-        s = tf.reduce_mean(tf.square(x - u), axis=axis, keepdims=True)
-        x = (x - u) * tf.rsqrt(s + epsilon)
-        x = x * g + b
-        return x
+class Norm(torch.nn.Module):
+    def __init__(self, n_state, dim: int = -1, eps=1e-5):
+        super().__init__()
+
+        self.g = torch.nn.Parameter(torch.ones((n_state)))
+        self.b = torch.nn.Parameter(torch.zeros((n_state)))
+
+        self.dim = dim
+        self.eps = eps
+
+    def forward(self, x: torch.Tensor):
+        u = torch.mean(x, dim=-1, keepdim=True)
+        s = torch.sqrt(torch.mean(torch.square(x - u), dim=self.dim, keepdim=True))
+
+        return self.g * (x - u) / (s + self.eps) + self.b
 
 
 def split_states(x, n):
