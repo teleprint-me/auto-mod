@@ -2,6 +2,7 @@ import numpy as np
 import torch
 from tensorflow.contrib.training import HParams
 from dataclasses import dataclass
+from typing import Sequence
 
 
 @dataclass
@@ -27,13 +28,13 @@ class Config:
 #     return [dynamic[i] if s is None else s for i, s in enumerate(static)]
 
 
-def softmax(x: torch.Tensor, dim: int = -1):
+def softmax(x: torch.Tensor, dim: int = -1) -> torch.Tensor:
     x = x - torch.max(x, dim=dim, keepdim=True)
     ex = torch.exp(x)
     return ex / torch.sum(ex, dim=dim, keepdim=True)
 
 
-def gelu(x: torch.Tensor):
+def gelu(x: torch.Tensor) -> torch.Tensor:
     return (
         0.5
         * x
@@ -42,7 +43,7 @@ def gelu(x: torch.Tensor):
 
 
 class Norm(torch.nn.Module):
-    def __init__(self, n_state, dim: int = -1, eps=1e-5):
+    def __init__(self, n_state: Sequence[int], dim: int = -1, eps: int = 1e-5):
         super().__init__()
 
         self.g = torch.nn.Parameter(torch.ones((n_state)))
@@ -51,7 +52,7 @@ class Norm(torch.nn.Module):
         self.dim = dim
         self.eps = eps
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         u = torch.mean(x, dim=self.dim, keepdim=True)
         s = torch.sqrt(torch.mean(torch.square(x - u), dim=self.dim, keepdim=True))
 
