@@ -1,16 +1,16 @@
 import numpy as np
 import torch
 from tensorflow.contrib.training import HParams
+from dataclasses import dataclass
 
 
-def default_hparams():
-    return HParams(
-        n_vocab=0,
-        n_ctx=1024,
-        n_embd=768,
-        n_head=12,
-        n_layer=12,
-    )
+@dataclass
+class Config:
+    n_blocks: int = 256
+    n_vocab: int = 30000
+    n_layer: int = 8
+    n_head: int = 4
+    n_embed: int = 264
 
 
 def shape_list(x):
