@@ -71,20 +71,23 @@ def merge_states(x: torch.Tensor) -> torch.Tensor:
     return x.view(*start, a * b)
 
 
-def conv1d(x, scope, nf, *, w_init_stdev=0.02):
-    with tf.variable_scope(scope):
-        *start, nx = shape_list(x)
-        w = tf.get_variable(
-            "w",
-            [1, nx, nf],
-            initializer=tf.random_normal_initializer(stddev=w_init_stdev),
-        )
-        b = tf.get_variable("b", [nf], initializer=tf.constant_initializer(0))
-        c = tf.reshape(
-            tf.matmul(tf.reshape(x, [-1, nx]), tf.reshape(w, [-1, nf])) + b,
-            start + [nf],
-        )
-        return c
+class Conv1D(torch.nn.Module):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: int | tuple[int, ...] = 1,
+        w_init_stdev: float = 0.02,
+    ):
+        super().__init__()
+
+        self.conv = torch.nn.Conv1d(in_channels, out_channels, kernel_size)
+
+        # Weight initialization
+        torch.nn.init.normal_(self.conv.weight, std=w_init_stdev)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.conv(x)
 
 
 def attention_mask(nd, ns, *, dtype):
