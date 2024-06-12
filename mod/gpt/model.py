@@ -52,7 +52,7 @@ class Norm(torch.nn.Module):
         self.eps = eps
 
     def forward(self, x: torch.Tensor):
-        u = torch.mean(x, dim=-1, keepdim=True)
+        u = torch.mean(x, dim=self.dim, keepdim=True)
         s = torch.sqrt(torch.mean(torch.square(x - u), dim=self.dim, keepdim=True))
 
         return self.g * (x - u) / (s + self.eps) + self.b
