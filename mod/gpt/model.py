@@ -43,7 +43,7 @@ def gelu(x: torch.Tensor) -> torch.Tensor:
 
 
 class Norm(torch.nn.Module):
-    def __init__(self, n_state: Sequence[int], dim: int = -1, eps: int = 1e-5):
+    def __init__(self, n_state: Sequence[int], dim: int = -1, eps: float = 1e-5):
         super().__init__()
 
         self.g = torch.nn.Parameter(torch.ones((n_state)))
