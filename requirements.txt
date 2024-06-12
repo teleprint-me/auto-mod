@@ -16,3 +16,5 @@ transformers
 huggingface_hub
 frontmatter
 texttable
+# matplotlib
+# pygobject
