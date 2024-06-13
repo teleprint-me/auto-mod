@@ -214,36 +214,43 @@ def attn(x: torch.Tensor, n_state: int, past: None | torch.Tensor, hparams: HPar
 
         return merge_states(tensor.T.permute([0, 2, 1, 3]))
 
-    def mask_attn_weights(w):
+    def mask_attn_weights(w: torch.Tensor) -> torch.Tensor:
         # w has shape [batch, heads, dst_sequence, src_sequence], where information flows from src to dst.
         _, _, nd, ns = shape_list(w)
         b = attention_mask(nd, ns, dtype=w.dtype)
-        b = tf.reshape(b, [1, 1, nd, ns])
-        w = w * b - tf.cast(1e10, w.dtype) * (1 - b)
+        b = torch.reshape(b, [1, 1, nd, ns])
+        w = w * b - w.to(w.dtype) * (1 - b)
         return w
 
-    def multihead_attn(q, k, v):
+    def multihead_attn(
+        q: torch.Tensor,
+        k: torch.Tensor,
+        v: torch.Tensor,
+    ) -> torch.Tensor:
         # q, k, v have shape [batch, heads, sequence, features]
-        w = tf.matmul(q, k, transpose_b=True)
-        w = w * tf.rsqrt(tf.cast(v.shape[-1].value, w.dtype))
+        w = torch.matmul(q, k.T)
+        w = w * torch.rsqrt(v.to(w.dtype))
 
         w = mask_attn_weights(w)
-        w = softmax(w)
-        a = tf.matmul(w, v)
+        w = softmax(w, w.dim())
+        a = torch.matmul(w, v)
         return a
 
-    with tf.variable_scope(scope):
-        c = conv1d(x, "c_attn", n_state * 3)
-        q, k, v = map(split_heads, tf.split(c, 3, axis=2))
-        present = tf.stack([k, v], axis=1)
-        if past is not None:
-            pk, pv = tf.unstack(past, axis=1)
-            k = tf.concat([pk, k], axis=-2)
-            v = tf.concat([pv, v], axis=-2)
-        a = multihead_attn(q, k, v)
-        a = merge_heads(a)
-        a = conv1d(a, "c_proj", n_state)
-        return a, present
+    # NOTE: torch.squeeze and torch.unqueeze are not directly substitutable
+    # for tf.stack and tf.unstack. They should be okay for handling singleton
+    # dimensions, but will prove to be problematic when batches are included.
+
+    attend = conv1d(x, nf=n_state * 3)
+    q, k, v = map(split_heads, torch.split(attend, 3, dim=2))
+    present = torch.squeeze([k, v], dim=1)
+    if past is not None:
+        pk, pv = torch.unsqueeze(past, dim=1)
+        k = torch.concat([pk, k], dim=-2)
+        v = torch.concat([pv, v], dim=-2)
+    a = multihead_attn(q, k, v)
+    a = merge_heads(a)
+    project = conv1d(a, nf=n_state)
+    return project, present
 
 
 def mlp(x, scope, n_state, *, hparams):
