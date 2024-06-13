@@ -196,6 +196,7 @@ def attention_mask(
     return m.to(dtype)
 
 
+# multi-head attention
 def attn(x: torch.Tensor, n_state: int, past: None | torch.Tensor, hparams: HParams):
     assert x.shape == 3  # Should be [batch, sequence, features]
     assert n_state % hparams.n_head == 0
@@ -253,6 +254,7 @@ def attn(x: torch.Tensor, n_state: int, past: None | torch.Tensor, hparams: HPar
     return project, present
 
 
+# multi-layer perceptron
 def mlp(x, scope, n_state, *, hparams):
     with tf.variable_scope(scope):
         nx = x.shape[-1].value
