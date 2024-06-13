@@ -197,7 +197,12 @@ def attention_mask(
 
 
 # multi-head attention
-def attn(x: torch.Tensor, n_state: int, past: None | torch.Tensor, hparams: HParams):
+def attn(
+    x: torch.Tensor,
+    n_state: int,
+    past: None | torch.Tensor,
+    hparams: HParams,
+) -> tuple[torch.Tensor, torch.Tensor]:
     assert x.shape == 3  # Should be [batch, sequence, features]
     assert n_state % hparams.n_head == 0
     if past is not None and len(past.shape) != 5:
@@ -255,22 +260,26 @@ def attn(x: torch.Tensor, n_state: int, past: None | torch.Tensor, hparams: HPar
 
 
 # multi-layer perceptron
-def mlp(x, scope, n_state, *, hparams):
-    with tf.variable_scope(scope):
-        nx = x.shape[-1].value
-        h = gelu(conv1d(x, "c_fc", n_state))
-        h2 = conv1d(h, "c_proj", nx)
-        return h2
+def mlp(x: torch.Tensor, n_state: int, hparams: HParams) -> torch.Tensor:
+    nx = x.shape[-1]
+    h_fc = gelu(conv1d(x, nf=n_state))
+    h_proj = conv1d(h_fc, nf=nx)
+    return h_proj
 
 
-def block(x, scope, *, past, hparams):
-    with tf.variable_scope(scope):
-        nx = x.shape[-1].value
-        a, present = attn(norm(x, "ln_1"), "attn", nx, past=past, hparams=hparams)
-        x = x + a
-        m = mlp(norm(x, "ln_2"), "mlp", nx * 4, hparams=hparams)
-        x = x + m
-        return x, present
+def block(
+    x: torch.Tensor,
+    past: torch.Tensor,
+    hparams: HParams,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    nx = x.shape[-1]
+    ln_1 = norm(x)
+    attend, present = attn(ln_1, n_state=nx, past=past, hparams=hparams)
+    x = x + attend
+    ln_2 = norm(x)
+    m = mlp(ln_2, n_state=nx * 4, hparams=hparams)
+    x = x + m
+    return x, present
 
 
 def past_shape(*, hparams, batch_size=None, sequence=None):
