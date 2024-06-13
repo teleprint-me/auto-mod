@@ -87,7 +87,6 @@ def norm(x: torch.Tensor, dim: int = -1, epsilon: float = 1e-5) -> torch.Tensor:
 
     This function is used throughout the codebase for normalizing tensors
     and will be removed once the entire implementation has been ported over
-
     """
 
     # Initialize weight (g) and bias (b) variables
