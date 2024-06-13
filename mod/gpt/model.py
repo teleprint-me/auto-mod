@@ -272,13 +272,22 @@ def block(
     past: torch.Tensor,
     hparams: HParams,
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    nx = x.shape[-1]
+    n_state = x.shape[-1]
+
+    # Normalize input tensor
     ln_1 = norm(x)
-    attend, present = attn(ln_1, n_state=nx, past=past, hparams=hparams)
-    x = x + attend
+
+    # Attention and addition
+    attend, present = attn(ln_1, n_state=n_state, past=past, hparams=hparams)
+    x += attend
+
+    # Re-normalize after adding attention
     ln_2 = norm(x)
-    m = mlp(ln_2, n_state=nx * 4, hparams=hparams)
-    x = x + m
+
+    # MLP and addition
+    mlp_output = mlp(ln_2, n_state * 4, hparams)
+    x += mlp_output
+
     return x, present
 
 
