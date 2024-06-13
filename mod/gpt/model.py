@@ -174,7 +174,22 @@ def conv1d(x: torch.Tensor, nf: int, w_init_stdev: float = 0.02) -> torch.Tensor
 def attention_mask(
     nd: int, ns: int, dtype: torch.dtype = torch.bfloat16
 ) -> torch.Tensor:
-    """1's in the lower triangle, counting from the lower right corner."""
+    """
+    1's in the lower triangle, counting from the lower right corner.
+
+    This function generates an attention mask used in self-attention mechanisms
+    to ensure that the model does not attend to future positions when processing
+    sequences of varying lengths. The mask is a 2D tensor with dimensions (nd, ns),
+    where nd represents the number of elements in one sequence and ns corresponds
+    to the total number of elements across all sequences combined.
+
+    :param nd: int - Number of elements in each input sequence
+    :param ns: int - Total number of elements across all input sequences
+    :param dtype: torch.dtype (optional, default=torch.bfloat16) - The data type for the attention mask tensor
+
+    :return: torch.Tensor - A 2D tensor with dimensions (nd, ns), where values are set to 1 along the lower triangle counting from the bottom right corner
+    """
+
     i = torch.arange(nd)[:, None]
     j = torch.arange(ns).view(-1)
     m = i >= j - ns + nd
