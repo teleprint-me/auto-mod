@@ -48,19 +48,26 @@ def softmax(x: torch.Tensor, dim: int = -1) -> torch.Tensor:
 
 def gelu(x: torch.Tensor) -> torch.Tensor:
     """
-    Computes the Gauss Error Linear Unit (GELU) activation function on input tensor x.
+    Computes the Gauss Error Linear Unit (GELU) activation function on input tensor x,
+    as outlined in "Gaussian Error Linear Units" paper (Hendrycks & Gimpel, 2016).
 
     :param x: torch.Tensor - The input PyTorch tensor
 
     :return: torch.Tensor - The resulting GELU-applied tensor
 
     Paper: https://arxiv.org/abs/1606.08415
+
+    This implementation of Gelu follows the equation proposed in the paper,
+    but it's important to note that there is no clear explanation for the use
+    of `0.044715`.
+
+    For more details on this activation function and its properties compared
+    to other activation functions like ReLU and ELU, you can refer to:
+        Hendrycks, D., & Gimpel, K. (2016). Gaussian Error Linear Units (GELUs). ArXiv preprint arXiv:1606.08437
     """
 
-    # NOTE: This is in the paper but is not explained.
-    # It is not part of the original expressions or normal distribution.
-    # TODO: Not sure where the hell this value came from.
-    wtf = 0.044715  # what the fuck is this?
+    # Magic value is from the original paper
+    wtf = 0.044715  # what the fuck?
     # NOTE: Equivalent to np.sqrt(2 / np.pi)
     a = (2 / torch.pi) ** 0.5
     b = x + wtf * torch.pow(x, 3)
