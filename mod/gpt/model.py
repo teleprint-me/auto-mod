@@ -103,6 +103,35 @@ def norm(x: torch.Tensor, dim: int = -1, epsilon: float = 1e-5) -> torch.Tensor:
     return g * x_norm + b
 
 
+def split_states(x: torch.Tensor, n_heads: int) -> torch.Tensor:
+    """
+    Reshape the last dimension of x into [n_head, x.shape[-1]/n_head]
+
+    :param x: torch.Tensor - The input PyTorch tensor
+
+    :param n_heads: int - Number of heads to split the last dimension
+
+    This function is used throughout the codebase for splitting tensors
+    along a specific number of dimensions
+
+    """
+
+    # Calculate the number of batches and new batch shape
+    n_batches = x.shape[0]
+
+    # Calculate the number of states and new state shape
+    n_states = x.shape[-1]  # Not sure if second or last value?
+
+    # Reshape the input tensor
+    return torch.reshape(x, (n_batches, n_heads, n_states // n_heads))
+
+
+def merge_states(x):
+    """Smash the last two dimensions of x into a single dimension."""
+    *start, a, b = shape_list(x)
+    return tf.reshape(x, start + [a * b])
+
+
 class Conv1D(torch.nn.Module):
     def __init__(
         self,
@@ -120,14 +149,6 @@ class Conv1D(torch.nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.conv(x)
-
-
-def split_states(x: torch.Tensor, n_heads: int) -> torch.Tensor:
-    """Reshape the last dimension of x into [n, x.shape[-1]/n]."""
-    # NOTE: Not sure if this is correct, may be 2d or 3d. Need to confirm.
-    # Seems like the original authors expected this to be 2d.
-    *n_batches, n_states = list(x.shape)
-    return torch.reshape(x, n_batches + [n_heads, n_states // n_heads])
 
 
 def attention_mask(
