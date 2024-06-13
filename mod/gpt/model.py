@@ -113,7 +113,6 @@ def split_states(x: torch.Tensor, n_heads: int) -> torch.Tensor:
 
     This function is used throughout the codebase for splitting tensors
     along a specific number of dimensions
-
     """
 
     if len(x.shape) != 2:
@@ -144,23 +143,32 @@ def merge_states(x: torch.Tensor) -> torch.Tensor:
     return torch.reshape(x, (start, a * b))
 
 
-class Conv1D(torch.nn.Module):
-    def __init__(
-        self,
-        in_channels: int,
-        out_channels: int,
-        kernel_size: int | tuple[int, ...] = 1,
-        w_init_stdev: float = 0.02,
-    ):
-        super().__init__()
+def conv1d(x: torch.Tensor, nf: int, w_init_stdev: float = 0.02) -> torch.Tensor:
+    """
+    Apply 1D convolution to the input tensor `x`, with specified number of filters (nf),
+    and initializer standard deviation (w_init_stdev).
 
-        self.conv = torch.nn.Conv1d(in_channels, out_channels, kernel_size)
+    :param x: torch.Tensor - The input PyTorch tensor
+    :param nf: int - Number of filters
+    :param w_init_stdev: float (optional, default=0.02) - Initialize standard deviation
 
-        # Weight initialization
-        torch.nn.init.normal_(self.conv.weight, std=w_init_stdev)
+    This function is used throughout the codebase for applying 1D convolutions
+    """
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.conv(x)
+    if len(x.shape) != 2:
+        raise ValueError(f"Expected x.shape of 2, got {len(x.shape)} instead.")
+
+    _, nx = shape_list(x)
+    # Initialize weight and bias variables
+    w = torch.empty((1, nx, nf))
+    w.normal_(mean=0.0, std=w_init_stdev)
+
+    b = torch.zeros((nf,))
+
+    # Perform convolution and bias addition
+    c = torch.conv1d(x, weight=w, bias=b, padding=0)
+
+    return c
 
 
 def attention_mask(
