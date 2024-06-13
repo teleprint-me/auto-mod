@@ -120,10 +120,10 @@ def split_states(x: torch.Tensor, n_heads: int) -> torch.Tensor:
 
     # NOTE: Not sure if second or last value?
     # Original docstring says -1, but code assumes 2d shape.
-    start, a = x.shape
+    batches, sequence = x.shape
 
     # Reshape the input tensor
-    return torch.reshape(x, (start, n_heads, a // n_heads))
+    return torch.reshape(x, (batches, n_heads, sequence // n_heads))
 
 
 def merge_states(x: torch.Tensor) -> torch.Tensor:
@@ -139,8 +139,8 @@ def merge_states(x: torch.Tensor) -> torch.Tensor:
     if len(x.shape) != 3:
         raise ValueError(f"Expected x.shape of 3, got {len(x.shape)} instead.")
 
-    start, a, b = x.shape
-    return torch.reshape(x, (start, a * b))
+    batches, sequence, features = x.shape
+    return torch.reshape(x, (batches, sequence * features))
 
 
 def conv1d(x: torch.Tensor, nf: int, w_init_stdev: float = 0.02) -> torch.Tensor:
@@ -196,21 +196,23 @@ def attention_mask(
     return m.to(dtype)
 
 
-def attn(x, scope, n_state, *, past, hparams):
-    assert x.shape.ndims == 3  # Should be [batch, sequence, features]
+def attn(x: torch.Tensor, n_state: int, past: None | torch.Tensor, hparams: HParams):
+    assert x.shape == 3  # Should be [batch, sequence, features]
     assert n_state % hparams.n_head == 0
-    if past is not None:
-        assert (
-            past.shape.ndims == 5
-        )  # Should be [batch, 2, heads, sequence, features], where 2 is [k, v]
+    if past is not None and len(past.shape) != 5:
+        raise ValueError(
+            "If provided, past should have a shape of [batch_size, 2, num_heads, sequence_length, embed_dim]."
+        )
 
-    def split_heads(x):
-        # From [batch, sequence, features] to [batch, heads, sequence, features]
-        return tf.transpose(split_states(x, hparams.n_head), [0, 2, 1, 3])
+    def split_heads(tensor: torch.Tensor) -> torch.Tensor:
+        """Reshape the last dimension of x into [n_head, x.shape[-1]/n_head]"""
 
-    def merge_heads(x):
-        # Reverse of split_heads
-        return merge_states(tf.transpose(x, [0, 2, 1, 3]))
+        return split_states(tensor).T.permute([0, 2, 1, 3])
+
+    def merge_heads(tensor: torch.Tensor) -> torch.Tensor:
+        """Smash the last two dimensions of x into a single dimension"""
+
+        return merge_states(tensor.T.permute([0, 2, 1, 3]))
 
     def mask_attn_weights(w):
         # w has shape [batch, heads, dst_sequence, src_sequence], where information flows from src to dst.
