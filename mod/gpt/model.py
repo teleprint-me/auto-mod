@@ -74,21 +74,34 @@ def gelu(x: torch.Tensor) -> torch.Tensor:
     return 0.5 * x * (1 + torch.tanh(a * b))
 
 
-class Norm(torch.nn.Module):
-    def __init__(self, n_state: Sequence[int], dim: int = -1, eps: float = 1e-5):
-        super().__init__()
+def norm(x: torch.Tensor, dim: int = -1, epsilon: float = 1e-5) -> torch.Tensor:
+    """
+    Normalize to mean=0 and std=1 along the specified dimension of input tensor `x`,
+    then apply a diagonal affine transform using learned weights (g) and bias (b).
 
-        self.g = torch.nn.Parameter(torch.ones((n_state)))
-        self.b = torch.nn.Parameter(torch.zeros((n_state)))
+    :param x: torch.Tensor - The input PyTorch tensor
 
-        self.dim = dim
-        self.eps = eps
+    :param dim: int (optional, default=-1) - The number of dimensions
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        u = torch.mean(x, dim=self.dim, keepdim=True)
-        s = torch.sqrt(torch.mean(torch.square(x - u), dim=self.dim, keepdim=True))
+    :param epsilon: float (optional, default=1e-5) - Small value added to variance for numerical stability
 
-        return self.g * (x - u) / (s + self.eps) + self.b
+    This function is used throughout the codebase for normalizing tensors
+    and will be removed once the entire implementation has been ported over
+
+    """
+
+    # Initialize weight (g) and bias (b) variables
+    g = torch.Parameter(torch.ones(x.size(-1)))
+    b = torch.Parameter(torch.zeros(x.size(-1)))
+
+    # Calculate mean (u) and variance (s) along the specified dimension
+    u = torch.mean(x, dim=dim, keepdim=True)
+    s = torch.mean((x - u) ** 2, dim=dim, keepdim=True) + epsilon
+
+    # Normalize input tensor by subtracting mean and dividing by standard deviation
+    x_norm = (x - u) * torch.rsqrt(s + epsilon)
+
+    return g * x_norm + b
 
 
 class Conv1D(torch.nn.Module):
