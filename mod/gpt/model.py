@@ -116,20 +116,32 @@ def split_states(x: torch.Tensor, n_heads: int) -> torch.Tensor:
 
     """
 
-    # Calculate the number of batches and new batch shape
-    n_batches = x.shape[0]
+    if len(x.shape) != 2:
+        raise ValueError(f"Expected tensor x.shape of 2, got {len(x.shape)} instead.")
 
-    # Calculate the number of states and new state shape
-    n_states = x.shape[-1]  # Not sure if second or last value?
+    # NOTE: Not sure if second or last value?
+    # Original docstring says -1, but code assumes 2d shape.
+    start, a = x.shape
 
     # Reshape the input tensor
-    return torch.reshape(x, (n_batches, n_heads, n_states // n_heads))
+    return torch.reshape(x, (start, n_heads, a // n_heads))
 
 
-def merge_states(x):
-    """Smash the last two dimensions of x into a single dimension."""
-    *start, a, b = shape_list(x)
-    return tf.reshape(x, start + [a * b])
+def merge_states(x: torch.Tensor) -> torch.Tensor:
+    """
+    Smash the last two dimensions of x into a single dimension
+
+    :param x: torch.Tensor - The input PyTorch tensor
+
+    This function is used throughout the codebase for merging tensors
+    along specific number(s) of dimensions
+    """
+
+    if len(x.shape) != 3:
+        raise ValueError(f"Expected x.shape of 3, got {len(x.shape)} instead.")
+
+    start, a, b = x.shape
+    return torch.reshape(x, (start, a * b))
 
 
 class Conv1D(torch.nn.Module):
