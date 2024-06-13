@@ -1,31 +1,70 @@
 from dataclasses import dataclass
 from typing import Sequence
 
-import numpy as np
 import torch
 
 
 @dataclass
-class Config:
-    n_blocks: int = 256
-    n_vocab: int = 30000
-    n_layer: int = 8
-    n_head: int = 4
-    n_embed: int = 264
+class HParams:
+    n_ctx = 1024
+    n_vocab = 50257
+    n_layer = 12
+    n_head = 12
+    n_embd = 768
+
+
+def shape_list(x: torch.Tensor) -> list[int]:
+    """
+    Deals with dynamic shapes in tensors cleanly,
+    similar to TensorFlow's `shape_list()`.
+
+    This function is used throughout the codebase for handling
+    tensor dimensions and will be removed once the entire
+    implementation has been ported over.
+
+    :param x: torch.Tensor - The input PyTorch tensor
+
+    :return: list[int] - A list containing the shape of the input tensor
+                (dimension, ...)
+    """
+
+    return list(x.shape)
 
 
 def softmax(x: torch.Tensor, dim: int = -1) -> torch.Tensor:
+    """
+    Computes the softmax function along a given dimension of input tensor `x`.
+
+    :param x: torch.Tensor - The input PyTorch tensor
+    :param dim: int (optional, default=-1) - Dimension over which to apply softmax
+
+    :return: torch.Tensor - The resulting softmax-applied tensor
+    """
+
     x = x - torch.max(x, dim=dim, keepdim=True)
     ex = torch.exp(x)
     return ex / torch.sum(ex, dim=dim, keepdim=True)
 
 
 def gelu(x: torch.Tensor) -> torch.Tensor:
-    return (
-        0.5
-        * x
-        * (1 + torch.tanh(((2 / np.pi) ** 0.5) * (x + 0.044715 * torch.pow(x, 3))))
-    )
+    """
+    Computes the Gauss Error Linear Unit (GELU) activation function on input tensor x.
+
+    :param x: torch.Tensor - The input PyTorch tensor
+
+    :return: torch.Tensor - The resulting GELU-applied tensor
+
+    Paper: https://arxiv.org/abs/1606.08415
+    """
+
+    # NOTE: This is in the paper but is not explained.
+    # It is not part of the original expressions or normal distribution.
+    # TODO: Not sure where the hell this value came from.
+    wtf = 0.044715  # what the fuck is this?
+    # NOTE: Equivalent to np.sqrt(2 / np.pi)
+    a = (2 / torch.pi) ** 0.5
+    b = x + wtf * torch.pow(x, 3)
+    return 0.5 * x * (1 + torch.tanh(a * b))
 
 
 class Norm(torch.nn.Module):
@@ -64,24 +103,12 @@ class Conv1D(torch.nn.Module):
         return self.conv(x)
 
 
-# TODO: This function will be removed once the code is fully ported over.
-# def shape_list(x):
-#     """Deal with dynamic shape in tensorflow cleanly."""
-#     static = x.shape.as_list()
-#     dynamic = tf.shape(x)
-#     return [dynamic[i] if s is None else s for i, s in enumerate(static)]
-
-
-def split_states(x: torch.Tensor, n) -> torch.Tensor:
+def split_states(x: torch.Tensor, n_heads: int) -> torch.Tensor:
     """Reshape the last dimension of x into [n, x.shape[-1]/n]."""
-    *start, m = x.shape
-    return x.view(*start, n, m // n)
-
-
-def merge_states(x: torch.Tensor) -> torch.Tensor:
-    """Smash the last two dimensions of x into a single dimension."""
-    *start, a, b = x.shape
-    return x.view(*start, a * b)
+    # NOTE: Not sure if this is correct, may be 2d or 3d. Need to confirm.
+    # Seems like the original authors expected this to be 2d.
+    *n_batches, n_states = list(x.shape)
+    return torch.reshape(x, n_batches + [n_heads, n_states // n_heads])
 
 
 def attention_mask(
