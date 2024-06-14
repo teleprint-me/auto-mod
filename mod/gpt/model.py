@@ -339,8 +339,8 @@ def model(
     h = norm(h)
 
     # Language model loss.  Do tokens <n predict token n?
-    h_flat = tf.reshape(h, [batch * sequence, hparams.n_embd])
-    logits = tf.matmul(h_flat, wte, transpose_b=True)
-    logits = tf.reshape(logits, [batch, sequence, hparams.n_vocab])
+    h_flat = torch.reshape(h, [batch * sequence, hparams.n_embd])
+    logits = torch.matmul(h_flat, wte.T)
+    logits = torch.reshape(logits, [batch, sequence, hparams.n_vocab])
     results["logits"] = logits
     return results
