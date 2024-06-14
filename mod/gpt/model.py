@@ -1,15 +1,5 @@
-from dataclasses import dataclass
-
 import torch
-
-
-@dataclass
-class HParams:
-    n_ctx = 1024
-    n_vocab = 50257
-    n_layer = 12
-    n_head = 12
-    n_embd = 768
+from config import Config
 
 
 def softmax(x: torch.Tensor, dim: int = -1) -> torch.Tensor:
@@ -182,7 +172,7 @@ def attn(
     x: torch.Tensor,
     n_state: int,
     past: None | torch.Tensor,
-    hparams: HParams,
+    hparams: Config,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     assert x.shape == 3  # Should be [batch, sequence, features]
     assert n_state % hparams.n_head == 0
@@ -241,7 +231,7 @@ def attn(
 
 
 # multi-layer perceptron
-def mlp(x: torch.Tensor, n_state: int, hparams: HParams) -> torch.Tensor:
+def mlp(x: torch.Tensor, n_state: int, hparams: Config) -> torch.Tensor:
     nx = x.shape[-1]
     h_fc = gelu(conv1d(x, nf=n_state))
     h_proj = conv1d(h_fc, nf=nx)
@@ -251,7 +241,7 @@ def mlp(x: torch.Tensor, n_state: int, hparams: HParams) -> torch.Tensor:
 def block(
     x: torch.Tensor,
     past: torch.Tensor,
-    hparams: HParams,
+    hparams: Config,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     n_state = x.shape[-1]
 
@@ -291,7 +281,7 @@ def gather(x: torch.Tensor, indices: torch.Tensor) -> torch.Tensor:
     return torch.index_select(x, dim=0, index=indices)
 
 
-def get_past(past: torch.Tensor, hparams: HParams) -> torch.Tensor:
+def get_past(past: torch.Tensor, hparams: Config) -> torch.Tensor:
     # If past is not None, unpack the tensor along axis=1 and add dimensions
     if past is not None:
         past = torch.unbind(past, dim=1)
@@ -302,7 +292,7 @@ def get_past(past: torch.Tensor, hparams: HParams) -> torch.Tensor:
 
 
 def model(
-    hparams: HParams,
+    hparams: Config,
     X: torch.Tensor,
     past: torch.Tensor = None,
     reuse: bool = False,
@@ -347,7 +337,7 @@ def model(
 
 
 class MultiLayerPerceptron(torch.nn.Module):
-    def __init__(self):
+    def __init__(self, config: Config):
         self.gelu = torch.nn.GELU()
         self.conv = torch.nn.Conv1d()
         ...  # TODO
@@ -357,16 +347,16 @@ class MultiLayerPerceptron(torch.nn.Module):
 
 # NOTE: Need to define our own constructor
 class Block(torch.Block):
-    def __init__(self, n_ctx, config, scale=False):
+    def __init__(self, config: Config, scale=False):
         super(Block, self).__init__()
         nx = config.n_embd
         self.ln_1 = torch.nn.LayerNorm(nx, eps=config.layer_norm_epsilon)
-        self.attn = torch.nn.MultiheadAttention(nx, n_ctx, config, scale)
+        self.attn = torch.nn.MultiheadAttention(nx, config.n_ctx, config, scale)
         self.ln_2 = torch.nn.LayerNorm(nx, eps=config.layer_norm_epsilon)
         self.mlp = MultiLayerPerceptron(4 * nx, config)
 
-    def forward(self, x):
-        a = self.attn(self.ln_1(x))
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        a = self.attn(self.ln_1(x), self.config.n_ctx)
         x = x + a
         m = self.mlp(self.ln_2(x))
         x = x + m
@@ -374,7 +364,7 @@ class Block(torch.Block):
 
 
 class GPT(torch.nn.Module):
-    def __init__(self, config):
+    def __init__(self, config: Config):
         super(GPT, self).__init__(config)
 
         self.wpe = torch.nn.Embedding(config.n_positions, config.n_embd)
