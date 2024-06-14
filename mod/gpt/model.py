@@ -307,41 +307,40 @@ def model(
     past: torch.Tensor = None,
     reuse: bool = False,
 ):
-    with tf.variable_scope(scope, reuse=reuse):
-        results = {}
-        batch, sequence = list(X.shape)
+    results = {}
+    batch, sequence = list(X.shape)
 
-        # Set positional encodings
-        wpe = torch.nn.Embedding(hparams.n_ctx, hparams.n_embd)
-        wpe.weight.normal_(mean=0.0, std=0.01)
+    # Set positional encodings
+    wpe = torch.nn.Embedding(hparams.n_ctx, hparams.n_embd)
+    wpe.weight.normal_(mean=0.0, std=0.01)
 
-        # Set word embeddings
-        wte = torch.nn.Embedding(hparams.n_vocab, hparams.n_embd)
-        wte.weight.normal_(mean=0.0, std=0.02)
+    # Set word embeddings
+    wte = torch.nn.Embedding(hparams.n_vocab, hparams.n_embd)
+    wte.weight.normal_(mean=0.0, std=0.02)
 
-        #
-        past_length = 0 if past is None else past.shape[-2]
-        # Hidden layer
-        h = gather(wte, X) + gather(wpe, positions_for(X, past_length))
+    #
+    past_length = 0 if past is None else past.shape[-2]
+    # Hidden layer
+    h = gather(wte, X) + gather(wpe, positions_for(X, past_length))
 
-        # Transformer
-        pasts = get_past(past, hparams)
-        assert len(pasts) == hparams.n_layer
+    # Transformer
+    pasts = get_past(past, hparams)
+    assert len(pasts) == hparams.n_layer
 
-        #
-        presents = []
-        for layer, past in enumerate(pasts):
-            h, present = block(h, past=past, hparams=hparams)
-            presents.append(present)
+    #
+    presents = []
+    for layer, past in enumerate(pasts):
+        h, present = block(h, past=past, hparams=hparams)
+        presents.append(present)
 
-        # NOTE: We need to stack, not squeeze. The tensors are concatenated.
-        # Stacking is horizontal by default.
-        results["present"] = torch.stack(presents, axis=1)
-        h = norm(h)
+    # NOTE: We need to stack, not squeeze. The tensors are concatenated.
+    # Stacking is horizontal by default.
+    results["present"] = torch.stack(presents, axis=1)
+    h = norm(h)
 
-        # Language model loss.  Do tokens <n predict token n?
-        h_flat = tf.reshape(h, [batch * sequence, hparams.n_embd])
-        logits = tf.matmul(h_flat, wte, transpose_b=True)
-        logits = tf.reshape(logits, [batch, sequence, hparams.n_vocab])
-        results["logits"] = logits
-        return results
+    # Language model loss.  Do tokens <n predict token n?
+    h_flat = tf.reshape(h, [batch * sequence, hparams.n_embd])
+    logits = tf.matmul(h_flat, wte, transpose_b=True)
+    logits = tf.reshape(logits, [batch, sequence, hparams.n_vocab])
+    results["logits"] = logits
+    return results
