@@ -344,3 +344,82 @@ def model(
     logits = torch.reshape(logits, [batch, sequence, hparams.n_vocab])
     results["logits"] = logits
     return results
+
+
+class MultiLayerPerceptron(torch.nn.Module):
+    def __init__(self):
+        self.gelu = torch.nn.GELU()
+        self.conv = torch.nn.Conv1d()
+        ...  # TODO
+
+    # TODO: get hidden state projection
+
+
+# NOTE: Need to define our own constructor
+class Block(torch.Block):
+    def __init__(self, n_ctx, config, scale=False):
+        super(Block, self).__init__()
+        nx = config.n_embd
+        self.ln_1 = torch.nn.LayerNorm(nx, eps=config.layer_norm_epsilon)
+        self.attn = torch.nn.MultiheadAttention(nx, n_ctx, config, scale)
+        self.ln_2 = torch.nn.LayerNorm(nx, eps=config.layer_norm_epsilon)
+        self.mlp = MultiLayerPerceptron(4 * nx, config)
+
+    def forward(self, x):
+        a = self.attn(self.ln_1(x))
+        x = x + a
+        m = self.mlp(self.ln_2(x))
+        x = x + m
+        return x
+
+
+class GPT(torch.nn.Module):
+    def __init__(self, config):
+        super(GPT, self).__init__(config)
+
+        self.wpe = torch.nn.Embedding(config.n_positions, config.n_embd)
+        self.wte = torch.nn.Embedding(config.vocab_size, config.n_embd)
+
+        self.drop = torch.nn.Dropout(config.embd_pdrop)
+        self.h = torch.nn.ModuleList(self.init_blocks())
+        self.ln_f = torch.nn.LayerNorm(config.n_embd, eps=config.layer_norm_epsilon)
+
+        self.apply(self.init_weights)
+
+    def init_blocks(self) -> list[Block]:
+        return [
+            Block(self.config.n_ctx, self.config, scale=True)
+            for _ in range(self.config.n_layer)
+        ]
+
+    def init_weights(self):
+        with torch.no_grad():
+            # Initialize position embeddings
+            self.wpe.weight.normal_(std=0.1)
+
+            # Initialize word embeddings
+            self.wte.weight.normal_(mean=0, std=0.2)
+
+            # Initialize attention and feedforward layers in transformer blocks
+            for block in self.h:
+                for layer in block._modules:
+                    if isinstance(layer, (torch.nn.Linear, torch.nn.Conv1d)):
+                        torch.nn.init.xavier_uniform_(layer.weight)
+
+    def forward(self, input_ids):
+        position_ids = torch.arange(
+            0,
+            input_ids.size(-1),
+            dtype=torch.long,
+            device=input_ids.device,
+        )
+        position_ids = position_ids.unsqueeze(0).expand_as(input_ids)
+
+        hidden_states = self.wte(input_ids) + self.wpe(position_ids)
+        hidden_states = self.drop(hidden_states)
+
+        for block in self.h:
+            hidden_states = block(hidden_states)
+        hidden_states = self.ln_f(hidden_states)
+
+        return hidden_states
