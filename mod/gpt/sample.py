@@ -3,6 +3,17 @@ import tensorflow as tf
 import model
 
 
+def past_shape(*, hparams, batch_size=None, sequence=None):
+    return [
+        batch_size,
+        hparams.n_layer,
+        2,
+        hparams.n_head,
+        sequence,
+        hparams.n_embd // hparams.n_head,
+    ]
+
+
 def top_k_logits(logits, k):
     if k == 0:
         # no truncation
@@ -71,7 +82,7 @@ def sample_sequence(
 
         logits = lm_output["logits"][:, :, : hparams.n_vocab]
         presents = lm_output["present"]
-        presents.set_shape(model.past_shape(hparams=hparams, batch_size=batch_size))
+        presents.set_shape(past_shape(hparams=hparams, batch_size=batch_size))
         return {
             "logits": logits,
             "presents": presents,
@@ -106,9 +117,7 @@ def sample_sequence(
             maximum_iterations=length - 1,
             loop_vars=[past, prev, output],
             shape_invariants=[
-                tf.TensorShape(
-                    model.past_shape(hparams=hparams, batch_size=batch_size)
-                ),
+                tf.TensorShape(past_shape(hparams=hparams, batch_size=batch_size)),
                 tf.TensorShape([batch_size, None]),
                 tf.TensorShape([batch_size, None]),
             ],

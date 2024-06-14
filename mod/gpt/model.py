@@ -291,17 +291,6 @@ def block(
     return x, present
 
 
-def past_shape(*, hparams, batch_size=None, sequence=None):
-    return [
-        batch_size,
-        hparams.n_layer,
-        2,
-        hparams.n_head,
-        sequence,
-        hparams.n_embd // hparams.n_head,
-    ]
-
-
 def expand_tile(value, size):
     """Add a new axis of given size."""
     value = tf.convert_to_tensor(value, name="value")
