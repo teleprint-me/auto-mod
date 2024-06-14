@@ -291,6 +291,16 @@ def gather(x: torch.Tensor, indices: torch.Tensor) -> torch.Tensor:
     return torch.index_select(x, dim=0, index=indices)
 
 
+def get_past(past: torch.Tensor, hparams: HParams) -> torch.Tensor:
+    # If past is not None, unpack the tensor along axis=1 and add dimensions
+    if past is not None:
+        past = torch.unbind(past, dim=1)
+    # If no past is provided, create an empty list of size hparams.n_layer
+    else:
+        past = torch.zeros(hparams.n_layer, dtype=torch.float32)
+    return past
+
+
 def model(
     hparams: HParams,
     X: torch.Tensor,
@@ -301,25 +311,32 @@ def model(
         results = {}
         batch, sequence = list(X.shape)
 
-        # NOTE: original init was tf.random_normal_initializer(stddev=0.01)
+        # Set positional encodings
         wpe = torch.nn.Embedding(hparams.n_ctx, hparams.n_embd)
+        wpe.weight.normal_(mean=0.0, std=0.01)
 
-        # NOTE: original init was tf.random_normal_initializer(stddev=0.02)
+        # Set word embeddings
         wte = torch.nn.Embedding(hparams.n_vocab, hparams.n_embd)
+        wte.weight.normal_(mean=0.0, std=0.02)
 
+        #
         past_length = 0 if past is None else past.shape[-2]
+        # Hidden layer
         h = gather(wte, X) + gather(wpe, positions_for(X, past_length))
 
         # Transformer
-        presents = []
-        pasts = (
-            tf.unstack(past, axis=1) if past is not None else [None] * hparams.n_layer
-        )
+        pasts = get_past(past, hparams)
         assert len(pasts) == hparams.n_layer
+
+        #
+        presents = []
         for layer, past in enumerate(pasts):
-            h, present = block(h, "h%d" % layer, past=past, hparams=hparams)
+            h, present = block(h, past=past, hparams=hparams)
             presents.append(present)
-        results["present"] = tf.stack(presents, axis=1)
+
+        # NOTE: We need to stack, not squeeze. The tensors are concatenated.
+        # Stacking is horizontal by default.
+        results["present"] = torch.stack(presents, axis=1)
         h = norm(h, "ln_f")
 
         # Language model loss.  Do tokens <n predict token n?
