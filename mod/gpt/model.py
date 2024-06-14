@@ -337,7 +337,7 @@ def model(
         # NOTE: We need to stack, not squeeze. The tensors are concatenated.
         # Stacking is horizontal by default.
         results["present"] = torch.stack(presents, axis=1)
-        h = norm(h, "ln_f")
+        h = norm(h)
 
         # Language model loss.  Do tokens <n predict token n?
         h_flat = tf.reshape(h, [batch * sequence, hparams.n_embd])
