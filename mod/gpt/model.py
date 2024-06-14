@@ -286,6 +286,11 @@ def positions_for(tokens: torch.Tensor, past_length: int) -> torch.Tensor:
     return expand_tile(past_length + torch.arange(nsteps), batch_size)
 
 
+def gather(x: torch.Tensor, indices: torch.Tensor) -> torch.Tensor:
+    """Gather tensor along the specified dimension."""
+    return torch.index_select(x, dim=0, index=indices)
+
+
 def model(
     hparams: HParams,
     X: torch.Tensor,
@@ -296,18 +301,14 @@ def model(
         results = {}
         batch, sequence = list(X.shape)
 
-        wpe = tf.get_variable(
-            "wpe",
-            [hparams.n_ctx, hparams.n_embd],
-            initializer=tf.random_normal_initializer(stddev=0.01),
-        )
-        wte = tf.get_variable(
-            "wte",
-            [hparams.n_vocab, hparams.n_embd],
-            initializer=tf.random_normal_initializer(stddev=0.02),
-        )
-        past_length = 0 if past is None else tf.shape(past)[-2]
-        h = tf.gather(wte, X) + tf.gather(wpe, positions_for(X, past_length))
+        # NOTE: original init was tf.random_normal_initializer(stddev=0.01)
+        wpe = torch.nn.Embedding(hparams.n_ctx, hparams.n_embd)
+
+        # NOTE: original init was tf.random_normal_initializer(stddev=0.02)
+        wte = torch.nn.Embedding(hparams.n_vocab, hparams.n_embd)
+
+        past_length = 0 if past is None else past.shape[-2]
+        h = gather(wte, X) + gather(wpe, positions_for(X, past_length))
 
         # Transformer
         presents = []
