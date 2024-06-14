@@ -301,7 +301,7 @@ def expand_tile(value: int | torch.Tensor, size: int) -> torch.Tensor:
 def positions_for(tokens: torch.Tensor, past_length: int) -> torch.Tensor:
     batch_size = tokens.shape[0]
     nsteps = tokens.shape[1]
-    return expand_tile(past_length + torch.range(nsteps), batch_size)
+    return expand_tile(past_length + torch.arange(nsteps), batch_size)
 
 
 def model(
