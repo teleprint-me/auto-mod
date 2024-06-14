@@ -12,24 +12,6 @@ class HParams:
     n_embd = 768
 
 
-def shape_list(x: torch.Tensor) -> list[int]:
-    """
-    Deals with dynamic shapes in tensors cleanly,
-    similar to TensorFlow's `shape_list()`.
-
-    This function is used throughout the codebase for handling
-    tensor dimensions and will be removed once the entire
-    implementation has been ported over.
-
-    :param x: torch.Tensor - The input PyTorch tensor
-
-    :return: list[int] - A list containing the shape of the input tensor
-                (dimension, ...)
-    """
-
-    return list(x.shape)
-
-
 def softmax(x: torch.Tensor, dim: int = -1) -> torch.Tensor:
     """
     Computes the softmax function along a given dimension of input tensor `x`.
@@ -157,7 +139,7 @@ def conv1d(x: torch.Tensor, nf: int, w_init_stdev: float = 0.02) -> torch.Tensor
     if len(x.shape) != 2:
         raise ValueError(f"Expected x.shape of 2, got {len(x.shape)} instead.")
 
-    _, nx = shape_list(x)
+    _, nx = list(x.shape)
     # Initialize weight and bias variables
     w = torch.empty((1, nx, nf))
     w.normal_(mean=0.0, std=w_init_stdev)
@@ -221,7 +203,7 @@ def attn(
 
     def mask_attn_weights(w: torch.Tensor) -> torch.Tensor:
         # w has shape [batch, heads, dst_sequence, src_sequence], where information flows from src to dst.
-        _, _, nd, ns = shape_list(w)
+        _, _, nd, ns = list(w.shape)
         b = attention_mask(nd, ns, dtype=w.dtype)
         b = torch.reshape(b, [1, 1, nd, ns])
         w = w * b - w.to(w.dtype) * (1 - b)
@@ -312,7 +294,7 @@ def model(
 ):
     with tf.variable_scope(scope, reuse=reuse):
         results = {}
-        batch, sequence = shape_list(X)
+        batch, sequence = list(X.shape)
 
         wpe = tf.get_variable(
             "wpe",
