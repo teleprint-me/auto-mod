@@ -291,20 +291,26 @@ def block(
     return x, present
 
 
-def expand_tile(value, size):
+def expand_tile(value: int | torch.Tensor, size: int) -> torch.Tensor:
     """Add a new axis of given size."""
-    value = tf.convert_to_tensor(value, name="value")
-    ndims = value.shape.ndims
-    return tf.tile(tf.expand_dims(value, axis=0), [size] + [1] * ndims)
+    if isinstance(value, int):
+        value = torch.Tensor([value])
+    dims = len(list(value.shape))
+    return torch.tile(torch.unsqueeze(value, dim=0), dims=[size] + ([1] * dims))
 
 
-def positions_for(tokens, past_length):
-    batch_size = tf.shape(tokens)[0]
-    nsteps = tf.shape(tokens)[1]
-    return expand_tile(past_length + tf.range(nsteps), batch_size)
+def positions_for(tokens: torch.Tensor, past_length: int) -> torch.Tensor:
+    batch_size = tokens.shape[0]
+    nsteps = tokens.shape[1]
+    return expand_tile(past_length + torch.range(nsteps), batch_size)
 
 
-def model(hparams, X, past=None, scope="model", reuse=False):
+def model(
+    hparams: HParams,
+    X: torch.Tensor,
+    past: torch.Tensor = None,
+    reuse: bool = False,
+):
     with tf.variable_scope(scope, reuse=reuse):
         results = {}
         batch, sequence = shape_list(X)
