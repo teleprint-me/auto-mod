@@ -337,12 +337,16 @@ def model(
 
 
 class MultiLayerPerceptron(torch.nn.Module):
-    def __init__(self, config: Config):
+    def __init__(self, config: Config, std: float = 0.02):
         self.gelu = torch.nn.GELU()
-        self.conv = torch.nn.Conv1d()
-        ...  # TODO
+        self.conv1d = torch.nn.Conv1d(config.n_embed, config.n_head)
+        # Weight initialization
+        torch.nn.init.normal_(self.conv1d.weight, std=std)
 
-    # TODO: get hidden state projection
+    def __call__(self, x: torch.Tensor) -> torch.Tensor:
+        c_fc = self.gelu(self.conv1d(x))
+        c_proj = self.conv1d(c_fc)
+        return c_proj
 
 
 # NOTE: Need to define our own constructor
