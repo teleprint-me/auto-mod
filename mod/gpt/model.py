@@ -349,9 +349,11 @@ class MultiLayerPerceptron(torch.nn.Module):
         return c_proj
 
 
-class Block(torch.Block):
+class Block(torch.nn.Module):
     def __init__(self, config: Config):
         super(Block, self).__init__()
+        self.config = config
+
         self.ln_1 = torch.nn.LayerNorm(config.n_embd, eps=config.layer_norm_epsilon)
         self.attn = torch.nn.MultiheadAttention(
             config.n_embed, config.n_head, dropout=config.attn_pdrop
