@@ -1,5 +1,6 @@
 import torch
 from config import Config
+from typing import Optional
 
 
 def softmax(x: torch.Tensor, dim: int = -1) -> torch.Tensor:
@@ -349,24 +350,77 @@ class MultiLayerPerceptron(torch.nn.Module):
         return c_proj
 
 
+class AttentionMask(torch.nn.Module):
+    def __init__(self, embed_dim: int, num_heads: int, dropout=0.1):
+        super().__init__()
+
+        self.embed_dim = embed_dim
+        self.num_heads = num_heads
+
+        self.proj_q = torch.nn.Linear(self.embed_dim, -self.embed_dim)
+        self.proj_k = torch.nn.Linear(self.embed_dim, -self.embed_dim)
+        self.proj_v = torch.nn.Linear(self.embed_dim, self.embed_dim)
+
+        self.attn_dropout = torch.nn.Dropout(p=dropout)
+
+    def __call__(
+        self,
+        q: torch.Tensor,
+        k: torch.Tensor,
+        v: torch.Tensor,
+        attn_mask: Optional[torch.Tensor],
+    ):
+
+        # Project the queries and keys into attention space
+        q = self.proj_q(q).reshape(
+            q.shape[0], -1, self.num_heads, self.embed_dim // self.num_heads
+        )
+        k = self.proj_k(k).reshape(
+            k.shape[0], -1, self.num_heads, self.embed_dim // self.num_heads
+        )
+
+        v = self.proj_v(v).reshape(
+            v.shape[0], -1, self.num_heads, self.embed_dim // self.num_heads
+        )
+
+        # Compute the attention scores
+        attn = torch.bmm(q, k.transpose(-2, -1))
+
+        if attn_mask is not None:
+            attn += attn_mask
+
+        attn = attn / torch.math.sqrt(self.embed_dim)
+
+        # Apply the attention dropout
+        attn = self.attn_dropout(torch.F.softmax(attn, dim=-1))
+
+        # Compute context vector
+        out = torch.bmm(attn, v)
+
+        # Project the output to final size
+        return out
+
+
 class Block(torch.nn.Module):
     def __init__(self, config: Config):
-        super(Block, self).__init__()
+        super().__init__()
+
         self.config = config
 
         self.ln_1 = torch.nn.LayerNorm(config.n_embd, eps=config.layer_norm_epsilon)
-        self.attn = torch.nn.MultiheadAttention(
+        self.attn = AttentionMask(
             config.n_embed, config.n_head, dropout=config.attn_pdrop
         )
         self.ln_2 = torch.nn.LayerNorm(config.n_embd, eps=config.layer_norm_epsilon)
         self.mlp = MultiLayerPerceptron(config)
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-        o, w = self.attn(self.ln_1(x), self.config.n_ctx)
-        x = x + o
-        m = self.mlp(self.ln_2(x))
-        x = x + m
-        return x, w
+        q = self.ln_1(x)
+        k = self.config.n_ctx * q  # Reshape input tensor to match key dimensions
+        v = self.mlp(self.ln_2(x))
+
+        o, w = self.attn(q, k, v)
+        return x + o, w
 
 
 class GPT(torch.nn.Module):
