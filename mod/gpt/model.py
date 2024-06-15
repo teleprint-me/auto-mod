@@ -349,22 +349,22 @@ class MultiLayerPerceptron(torch.nn.Module):
         return c_proj
 
 
-# NOTE: Need to define our own constructor
 class Block(torch.Block):
-    def __init__(self, config: Config, scale=False):
+    def __init__(self, config: Config):
         super(Block, self).__init__()
-        nx = config.n_embd
-        self.ln_1 = torch.nn.LayerNorm(nx, eps=config.layer_norm_epsilon)
-        self.attn = torch.nn.MultiheadAttention(nx, config.n_ctx, config, scale)
-        self.ln_2 = torch.nn.LayerNorm(nx, eps=config.layer_norm_epsilon)
-        self.mlp = MultiLayerPerceptron(4 * nx, config)
+        self.ln_1 = torch.nn.LayerNorm(config.n_embd, eps=config.layer_norm_epsilon)
+        self.attn = torch.nn.MultiheadAttention(
+            config.n_embed, config.n_head, dropout=config.attn_pdrop
+        )
+        self.ln_2 = torch.nn.LayerNorm(config.n_embd, eps=config.layer_norm_epsilon)
+        self.mlp = MultiLayerPerceptron(config)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        a = self.attn(self.ln_1(x), self.config.n_ctx)
-        x = x + a
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        o, w = self.attn(self.ln_1(x), self.config.n_ctx)
+        x = x + o
         m = self.mlp(self.ln_2(x))
         x = x + m
-        return x
+        return x, w
 
 
 class GPT(torch.nn.Module):
