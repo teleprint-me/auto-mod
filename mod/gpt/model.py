@@ -414,7 +414,7 @@ class Block(torch.nn.Module):
         self.ln_2 = torch.nn.LayerNorm(config.n_embd, eps=config.layer_norm_epsilon)
         self.mlp = MultiLayerPerceptron(config)
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         q = self.ln_1(x)
         k = self.config.n_ctx * q  # Reshape input tensor to match key dimensions
         v = self.mlp(self.ln_2(x))
