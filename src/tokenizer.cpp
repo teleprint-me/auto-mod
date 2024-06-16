@@ -28,10 +28,11 @@ struct MetaToken {
 };
 
 // TODO/WIP
-struct normalizer {
+struct Normalizer {
     std::string type; // type is always available if normalizer is not null
 
     // TODO: Handle sequences if type is Sequence
+    std::vector<nlohmann::json> rules;
 
     // default to false because these member attributes may not be available
     bool add_prefix_space = false;
@@ -39,11 +40,11 @@ struct normalizer {
 };
 
 // TODO/WIP
-struct pre_tokenizer {
+struct PreTokenizer {
     std::string type; // type is always available if pre_tokenizer is not null
 
     // TODO: Handle sequences if type is Sequence
-    std::vector<nlohmann::json> tokenizers;
+    std::vector<nlohmann::json> rules;
 
     // default to false because these member attributes may not be available
     bool add_prefix_space = false;
@@ -81,7 +82,7 @@ struct Vocabulary {
     }
 };
 
-struct tokenizer_model {
+struct TokenizerModel {
 
     std::string type;
 
@@ -108,7 +109,7 @@ struct tokenizer_model {
     nlohmann::json pre_tokenizer;
 };
 
-std::vector<struct MetaToken*> set_MetaTokens(nlohmann::json added_tokens) {
+std::vector<struct MetaToken*> allocate_meta_tokens(nlohmann::json added_tokens) {
 
     if (added_tokens.is_null()) {
         throw std::invalid_argument("Expected a valid added_tokens argument, got null instead.");
@@ -133,7 +134,7 @@ std::vector<struct MetaToken*> set_MetaTokens(nlohmann::json added_tokens) {
     return token_set;
 }
 
-void unset_MetaTokens(std::vector<struct MetaToken*> token_set) {
+void deallocate_meta_tokens(std::vector<struct MetaToken*> token_set) {
     // Deallocate memory for all struct MetaToken objects
     for (auto token : token_set) {
         delete token;
